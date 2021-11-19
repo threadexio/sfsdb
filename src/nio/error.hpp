@@ -14,5 +14,7 @@ namespace nio {
 		void set(int _err);
 
 		void operator=(int _err);
+
+		operator bool();
 	};
 } // namespace nio

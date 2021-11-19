@@ -11,6 +11,8 @@ namespace nio {
 		namespace v4 {
 			class addr4 : public base::addr {
 				public:
+				addr4();
+
 				addr4(const std::string& _ip, in_port_t _port);
 
 				std::string ip() const;
@@ -18,6 +20,8 @@ namespace nio {
 
 				in_port_t port() const;
 				void	  port(in_port_t _port);
+
+				operator sockaddr*();
 
 				private:
 				sockaddr_in saddr;

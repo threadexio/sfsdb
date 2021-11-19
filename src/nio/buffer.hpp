@@ -10,7 +10,7 @@ namespace nio {
 
 	class buffer {
 		public:
-		buffer();
+		buffer(size_t _len);
 		buffer(void* _data, size_t _len);
 
 		template <class _T, size_t _L = sizeof(_T)>
@@ -35,8 +35,9 @@ namespace nio {
 			return pos - _L;
 		}
 
-		size_t length() const;
-		bool   empty() const;
+		size_t		length() const;
+		bool		empty() const;
+		const void* content() const;
 
 		void* content();
 		void  clear();

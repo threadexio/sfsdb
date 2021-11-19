@@ -17,3 +17,7 @@ void nio::error::set(int _err) {
 void nio::error::operator=(int _err) {
 	set(_err);
 }
+
+nio::error::operator bool() {
+	return err;
+}

@@ -5,6 +5,9 @@
 #include <string.h>
 #include <sys/socket.h>
 
+nio::ip::v4::addr4::addr4() {
+}
+
 nio::ip::v4::addr4::addr4(const std::string& _ip, in_port_t _port) {
 	slen = sizeof(sockaddr_in);
 	memset(&saddr, 0, slen);
@@ -28,4 +31,8 @@ in_port_t nio::ip::v4::addr4::port() const {
 
 void nio::ip::v4::addr4::port(in_port_t _port) {
 	saddr.sin_port = htons(_port);
+}
+
+nio::ip::v4::addr4::operator sockaddr*() {
+	return (sockaddr*)&saddr;
 }
