@@ -2,6 +2,7 @@
 CXX ?=
 
 CXXFLAGS ?=
+CMFLAGS ?= 
 
 #===============#
 
@@ -21,7 +22,7 @@ build:
 
 	@export CPPFLAGS="$(CXXFLAGS)"
 
-	@cmake -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) ..
+	@cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMFLAGS) ..
 
 	@make
 
