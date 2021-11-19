@@ -1,0 +1,51 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <vector>
+
+namespace nio {
+
+	class buffer {
+		public:
+		buffer();
+		buffer(void* _data, size_t _len);
+
+		template <class _T, size_t _L = sizeof(_T)>
+		_T read() {
+			{
+				_T ret = *((_T*)&vec[pos]);
+				pos += _L;
+				return ret;
+			}
+		}
+
+		template <class _T, size_t _L = sizeof(_T)>
+		size_t write(const _T& _data) {
+			if (pos + _L > length()) {
+				resize(pos + _L);
+			}
+
+			memcpy(&vec[pos], &_data, _L);
+			pos += _L;
+
+			// return the index at which the data was written
+			return pos - _L;
+		}
+
+		size_t length() const;
+		bool   empty() const;
+
+		void* content();
+		void  clear();
+		void  seek(size_t _new_pos);
+		void  resize(size_t _len);
+
+		private:
+		size_t				 pos = 0;
+		std::vector<uint8_t> vec;
+	};
+
+} // namespace nio

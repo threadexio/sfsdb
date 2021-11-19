@@ -4,8 +4,6 @@
 
 #include <string>
 
-#include "../nio.hpp"
-
 namespace nio {
 	namespace base {
 		class addr {

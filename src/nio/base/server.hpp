@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../error.hpp"
+
 namespace nio {
 	namespace base {
 

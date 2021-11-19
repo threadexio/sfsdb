@@ -16,7 +16,7 @@ all: build
 
 .PHONY:
 .ONESHELL:
-build:
+build: FORCE
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR)
 
@@ -29,3 +29,5 @@ build:
 .PHONY:
 clean:
 	@-rm -rf $(BUILD_DIR)
+
+FORCE: ;
