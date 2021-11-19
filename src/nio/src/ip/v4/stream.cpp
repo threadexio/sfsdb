@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 
+#include <cerrno>
 #include <cstddef>
 
 #include "buffer.hpp"
@@ -18,12 +19,11 @@ nio::buffer nio::ip::v4::stream4::read(nio::error& _err,
 	buffer ret(_size);
 
 	int read_bytes = recv(sock, ret.content(), _size, _flags);
+	_err		   = errno;
 
-	if (read_bytes < 0) {
-		_err = read_bytes;
-	} else {
+	// dont do unneeded resizing if there was an error
+	if (read_bytes >= 0)
 		ret.resize(read_bytes);
-	}
 
 	return ret;
 }
@@ -32,11 +32,7 @@ size_t nio::ip::v4::stream4::write(nio::error&	 _err,
 								   const buffer& _data,
 								   int			 _flags) {
 	int written_bytes = send(sock, _data.content(), _data.length(), _flags);
-
-	if (written_bytes < 0) {
-		_err = written_bytes;
-	}
-
+	_err			  = errno;
 	return written_bytes;
 }
 

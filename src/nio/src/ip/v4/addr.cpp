@@ -33,6 +33,6 @@ void nio::ip::v4::addr4::port(in_port_t _port) {
 	saddr.sin_port = htons(_port);
 }
 
-nio::ip::v4::addr4::operator sockaddr*() {
+nio::ip::v4::addr4::operator struct sockaddr *() {
 	return (sockaddr*)&saddr;
 }

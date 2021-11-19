@@ -21,7 +21,7 @@ namespace nio {
 				in_port_t port() const;
 				void	  port(in_port_t _port);
 
-				operator sockaddr*();
+				operator struct sockaddr *();
 
 				private:
 				sockaddr_in saddr;
