@@ -35,14 +35,18 @@ namespace nio {
 			return pos - _L;
 		}
 
+		uint8_t		at(size_t _index) const;
 		size_t		length() const;
 		bool		empty() const;
 		const void* content() const;
 
-		void* content();
-		void  clear();
-		void  seek(size_t _new_pos);
-		void  resize(size_t _len);
+		uint8_t& index(size_t _index);
+		void*	 content();
+		void	 clear();
+		void	 seek(size_t _new_pos);
+		void	 resize(size_t _len);
+
+		uint8_t& operator[](size_t _index);
 
 		private:
 		size_t				 pos = 0;

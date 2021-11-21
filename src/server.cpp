@@ -1,10 +1,11 @@
+#include "nio/ip/v4/server.hpp"
+
 #include <cstdint>
 #include <iostream>
 
 #include "nio/buffer.hpp"
 #include "nio/error.hpp"
 #include "nio/ip/v4/addr.hpp"
-#include "nio/ip/v4/server.hpp"
 
 int main() {
 	auto e = nio::error();
