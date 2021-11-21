@@ -8,14 +8,11 @@
 namespace nio {
 	namespace ip {
 		namespace v4 {
-			class client4 : public base::client {
+			class client4 : public base::client<addr4, stream4> {
 				public:
 				client4(error& _err, addr4 _remote);
 
 				stream4 Connect(error& _err);
-
-				private:
-				addr4 remote;
 			};
 		} // namespace v4
 	}	  // namespace ip

@@ -9,10 +9,10 @@
 #include "ip/v4/stream.hpp"
 
 nio::ip::v4::server4::server4(nio::error&				_err,
-							  const nio::ip::v4::addr4& _server)
-	: server(_server) {
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	_err = errno;
+							  const nio::ip::v4::addr4& _server) {
+	server = _server;
+	sock   = socket(AF_INET, SOCK_STREAM, 0);
+	_err   = errno;
 }
 
 nio::error nio::ip::v4::server4::Bind() {

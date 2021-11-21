@@ -1,7 +1,6 @@
 #pragma once
 
 #include <netinet/in.h>
-#include <string.h>
 
 #include <string>
 
@@ -10,10 +9,8 @@
 namespace nio {
 	namespace ip {
 		namespace v4 {
-			class addr4 : public base::addr {
+			class addr4 : public base::addr<sockaddr_in> {
 				public:
-				sockaddr_in saddr;
-
 				addr4();
 
 				addr4(const std::string& _ip, in_port_t _port);

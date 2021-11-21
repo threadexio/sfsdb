@@ -8,7 +8,7 @@
 namespace nio {
 	namespace ip {
 		namespace v4 {
-			class server4 : public base::server {
+			class server4 : public base::server<addr4, stream4> {
 				public:
 				server4(error& _err, const addr4& _server);
 
@@ -16,9 +16,6 @@ namespace nio {
 				error Listen(int _queue = 5);
 
 				stream4 Accept(error& _err);
-
-				private:
-				addr4 server;
 			};
 		} // namespace v4
 	}	  // namespace ip

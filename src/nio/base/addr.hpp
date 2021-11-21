@@ -1,14 +1,22 @@
 #pragma once
 
 #include <netinet/in.h>
-#include <sys/socket.h>
 
 #include <string>
 
 namespace nio {
 	namespace base {
+
+		/**
+		 * @brief Base class for any address
+		 *
+		 * @tparam T Type of the underlying C struct
+		 */
+		template <class T>
 		class addr {
 			public:
+			T saddr;
+
 			virtual std::string ip() const				   = 0;
 			virtual void		ip(const std::string& _ip) = 0;
 
