@@ -3,5 +3,8 @@ add_subdirectory(nio/)
 
 include_directories(include/)
 
-add_executable(main main.cpp)
-target_link_libraries(main nio)
+add_executable(server server.cpp)
+target_link_libraries(server nio)
+
+add_executable(client client.cpp)
+target_link_libraries(client nio)
