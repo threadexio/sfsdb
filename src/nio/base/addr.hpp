@@ -23,6 +23,8 @@ namespace nio {
 
 			protected:
 			socklen_t slen;
+
+			virtual void _setup() = 0;
 		};
 	} // namespace base
 } // namespace nio

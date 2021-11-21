@@ -18,7 +18,7 @@ nio::ip::v4::server4::server4(nio::error&				_err,
 nio::error nio::ip::v4::server4::Bind() {
 	// we dont actually need the return value for anything
 	// set _err to errno to indicate success or an error
-	(void)bind(sock, server, server.length());
+	(void)bind(sock, (sockaddr*)&server.saddr, server.length());
 	return error(errno);
 }
 

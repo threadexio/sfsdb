@@ -6,12 +6,11 @@
 #include <sys/socket.h>
 
 nio::ip::v4::addr4::addr4() {
+	_setup();
 }
 
 nio::ip::v4::addr4::addr4(const std::string& _ip, in_port_t _port) {
-	slen = sizeof(sockaddr_in);
-	memset(&saddr, 0, slen);
-	saddr.sin_family = AF_INET;
+	_setup();
 
 	ip(_ip);
 	port(_port);
@@ -33,6 +32,12 @@ void nio::ip::v4::addr4::port(in_port_t _port) {
 	saddr.sin_port = htons(_port);
 }
 
-nio::ip::v4::addr4::operator struct sockaddr *() {
+nio::ip::v4::addr4::operator sockaddr*() {
 	return (sockaddr*)&saddr;
+}
+
+void nio::ip::v4::addr4::_setup() {
+	slen = sizeof(saddr);
+	memset(&saddr, 0, slen);
+	saddr.sin_family = AF_INET;
 }
