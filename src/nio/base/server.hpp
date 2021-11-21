@@ -15,9 +15,28 @@ namespace nio {
 		template <class T, class E>
 		class server : public _sock {
 			public:
-			virtual error Bind()				 = 0;
+			/**
+			 * @brief Bind to the server address.
+			 *
+			 * @return error - Check this for errors
+			 */
+			virtual error Bind() = 0;
+
+			/**
+			 * @brief Listen on the server address.
+			 *
+			 * @param _queue
+			 * @return error - Check this for errors
+			 */
 			virtual error Listen(int _queue = 5) = 0;
-			virtual E	  Accept(error& _err)	 = 0;
+
+			/**
+			 * @brief Accept a new connection from the
+			 *
+			 * @param _err Check this for errors
+			 * @return E
+			 */
+			virtual E Accept(error& _err) = 0;
 
 			protected:
 			T server;

@@ -13,13 +13,42 @@ namespace nio {
 				public:
 				addr4();
 
+				/**
+				 * @brief Create a new addr4 object the represents the endpoint
+				 * _ip:_port
+				 *
+				 * @param _ip
+				 * @param _port
+				 */
 				addr4(const std::string& _ip, in_port_t _port);
 
+				/**
+				 * @brief Get the IP address.
+				 *
+				 * @return std::string
+				 */
 				std::string ip() const;
-				void		ip(const std::string& _ip);
 
+				/**
+				 * @brief Set the IP address.
+				 *
+				 * @param _ip
+				 */
+				void ip(const std::string& _ip);
+
+				/**
+				 * @brief Get the port number.
+				 *
+				 * @return in_port_t
+				 */
 				in_port_t port() const;
-				void	  port(in_port_t _port);
+
+				/**
+				 * @brief Set the port number.
+				 *
+				 * @param _port
+				 */
+				void port(in_port_t _port);
 
 				operator sockaddr*();
 

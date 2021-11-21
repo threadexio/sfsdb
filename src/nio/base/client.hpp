@@ -15,6 +15,12 @@ namespace nio {
 		template <class T, class E>
 		class client : public _sock {
 			public:
+			/**
+			 * @brief Connect to a remote endpoint.
+			 *
+			 * @param _err Check this for any errors
+			 * @return E
+			 */
 			virtual E Connect(error& _err) = 0;
 
 			protected:

@@ -11,6 +11,11 @@ namespace nio {
 		error();
 		error(int _err);
 
+		/**
+		 * @brief The the error represented to _err.
+		 *
+		 * @param _err
+		 */
 		void set(int _err);
 
 		void operator=(int _err);
