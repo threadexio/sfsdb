@@ -1,5 +1,5 @@
 # Networking
-add_subdirectory(nio/)
+add_subdirectory(include/nio/)
 
 include_directories(include/)
 
