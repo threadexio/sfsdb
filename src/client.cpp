@@ -6,6 +6,7 @@
 #include "nio/buffer.hpp"
 #include "nio/error.hpp"
 #include "nio/ip/v4/addr.hpp"
+#include "resp/components.hpp"
 #include "resp/resp.hpp"
 
 static resp::status invalid(char* data) {
@@ -15,6 +16,14 @@ static resp::status invalid(char* data) {
 
 static resp::status get(char* data) {
 	std::cout << "get command\n";
+
+	return resp::status::OK;
+}
+
+static resp::status err(char* data) {
+	resp::components::error err(data);
+
+	std::cout << "Error: " << err.value << "\n";
 
 	return resp::status::OK;
 }
@@ -43,11 +52,12 @@ int main() {
 	return 0;
 	*/
 
-	const char* test = "+GET\r\n:-1234\r\n$17\r\nthis\n\r is my "
+	const char* test = "-Test error\r\n:-1234\r\n$17\r\nis\n\r is my "
 					   "data\r\n:123456789\r\n+simple string\r\n";
 
 	resp::callbacks cbs;
 	cbs.INV = invalid;
+	cbs.ERR = err;
 	cbs.GET = get;
 
 	std::cout << "resp::parse = " << (int)resp::parse(cbs, (char*)test) << "\n";

@@ -35,13 +35,9 @@ namespace resp {
 		struct string {
 			char*	value  = NULL;
 			int64_t length = 0;
-			bool	error  = false;
 
 			string(char*& _data) {
-				if (*_data == '+' || *_data == '-') { // simple string or error
-					if (*_data == '-')
-						error = true;
-
+				if (*_data == '+') { // simple string or error
 					_data++;
 					auto* tmp = _data;
 					while (*tmp != '\r') {
@@ -72,6 +68,30 @@ namespace resp {
 
 			~string() {
 				delete value;
+			}
+		};
+
+		struct error {
+			char*	value  = NULL;
+			int64_t length = 0;
+
+			error(char*& _data) {
+				if (*_data != '-')
+					return;
+
+				_data++;
+				auto* tmp = _data;
+				while (*tmp != '\r') {
+					length++;
+					tmp++;
+				}
+
+				value = new char[length + 1];
+
+				value[length] = 0;
+
+				std::memcpy(value, _data, length);
+				_data += length + 2;
 			}
 		};
 	} // namespace components

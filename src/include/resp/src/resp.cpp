@@ -2,21 +2,23 @@
 
 #include "components.hpp"
 
-#define RESP_CHECK_NULL(x)                                                     \
+#define RESP_CALL_IFN_NULL(x, d)                                               \
 	{                                                                          \
 		if (x == NULL)                                                         \
 			return resp::status::NIMPL;                                        \
+		else                                                                   \
+			return x(d);                                                       \
 	}
 
 resp::status resp::parse(callbacks& cbs, char* data) {
-	if (*data != '+' && *data != '-') { // upon invalid command, the first
-										// callback from cbs will be executed
-		RESP_CHECK_NULL(cbs.INV);
-		return cbs.INV(data);
+	if (*data != '+' && *data != '-') { // if the request doesnt begin with a -
+										// or + then it is not valid
+		RESP_CALL_IFN_NULL(cbs.INV, data);
+	} else if (*data == '-') {
+		RESP_CALL_IFN_NULL(cbs.ERR, data);
 	}
 
 	cb_lookup_t lookup_table[] = {
-		{"ERR", cbs.ERR},
 		{"GET", cbs.GET},
 		{"PUT", cbs.PUT},
 		{"DEL", cbs.DEL},
@@ -28,8 +30,7 @@ resp::status resp::parse(callbacks& cbs, char* data) {
 	for (size_t i = 0; i < nkeys; i++) {
 		cb_lookup_t* t = &lookup_table[i];
 		if (strcmp(t->key, command.value) == 0) {
-			RESP_CHECK_NULL(t->cb);
-			return t->cb(data);
+			RESP_CALL_IFN_NULL(t->cb, data);
 		}
 	}
 
