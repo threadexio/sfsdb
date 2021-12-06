@@ -28,7 +28,7 @@ namespace nio {
 			buffer read(error& _err, size_t _size, int _flags = 0) {
 				buffer ret(_size);
 
-				int read_bytes = recv(sock, ret.content(), _size, _flags);
+				int read_bytes = recv(sock, ret.data(), _size, _flags);
 				_err		   = errno;
 
 				// dont do unneeded resizing if there was an error
@@ -48,7 +48,7 @@ namespace nio {
 			 */
 			size_t write(error& _err, const buffer& _data, int _flags = 0) {
 				int written_bytes =
-					send(sock, _data.content(), _data.length(), _flags);
+					send(sock, _data.data(), _data.length(), _flags);
 				_err = errno;
 				return written_bytes;
 			}

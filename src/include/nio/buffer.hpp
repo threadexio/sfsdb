@@ -13,6 +13,8 @@ namespace nio {
 	 */
 	class buffer {
 		public:
+		buffer() {};
+
 		/**
 		 * @brief Create a new buffer with initial size of _len.
 		 *
@@ -65,12 +67,12 @@ namespace nio {
 		}
 
 		/**
-		 * @brief Get the byte at _index.
+		 * @brief Get a reference of the byte at _index.
 		 *
 		 * @param _index
 		 * @return uint8_t
 		 */
-		uint8_t at(size_t _index) const;
+		uint8_t& at(size_t _index);
 
 		/**
 		 * @brief Get the length of the buffer.
@@ -92,22 +94,14 @@ namespace nio {
 		 *
 		 * @return const void*
 		 */
-		const void* content() const;
-
-		/**
-		 * @brief Get a read-write reference to the byte at _index.
-		 *
-		 * @param _index
-		 * @return uint8_t&
-		 */
-		uint8_t& index(size_t _index);
+		const void* data() const;
 
 		/**
 		 * @brief Get a read-write pointer to the buffer's data.
 		 *
 		 * @return void*
 		 */
-		void* content();
+		void* data();
 
 		/**
 		 * @brief Clear out the buffer.
@@ -129,6 +123,8 @@ namespace nio {
 		void resize(size_t _len);
 
 		uint8_t& operator[](size_t _index);
+
+		operator char*();
 
 		private:
 		size_t				 pos = 0;

@@ -37,7 +37,7 @@ namespace resp {
 			int64_t length = 0;
 
 			string(char*& _data) {
-				if (*_data == '+') { // simple string or error
+				if (*_data == '+') { // simple string
 					_data++;
 					auto* tmp = _data;
 					while (*tmp != '\r') {

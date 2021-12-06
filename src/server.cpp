@@ -6,6 +6,29 @@
 #include "nio/buffer.hpp"
 #include "nio/error.hpp"
 #include "nio/ip/v4/addr.hpp"
+#include "resp/components.hpp"
+#include "resp/resp.hpp"
+
+static resp::status get(char* data) {
+	resp::components::integer len(data);
+
+	std::cout << "len = " << len.value << "\n";
+
+	return resp::status::OK;
+}
+
+static resp::status invalid(char* data) {
+	std::cout << "invalid command\n";
+	return resp::status::NCMD;
+}
+
+static resp::status error(char* data) {
+	std::cout << "error\n";
+	return resp::status::ERR;
+}
+
+static const resp::rcmd_t cmds[] = {
+	{"_ERR", error}, {"_INV", invalid}, {"GET", get}};
 
 int main() {
 	auto e = nio::error();
@@ -26,10 +49,13 @@ int main() {
 		std::cout << "Connected: " << stream.peer().ip() << ":"
 				  << stream.peer().port() << "\n";
 
-		nio::buffer data = stream.read(e, 16);
+		nio::buffer data = stream.read(e, 256, 0);
 
-		std::cout << "Recveived: " << (char*)data.content() << "\n";
+		resp::parse(cmds, RESP_COUNT(cmds), data);
 
+		data.clear();
+		data.write("+OK\r\n");
+		std::cout << data.length() << "\n";
 		stream.write(e, data);
 
 		stream.shutdown();

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <cstring>
+
+#define RESP_COUNT(x) sizeof(x) / sizeof(x[0])
 
 namespace resp {
 	// Internal status codes from the function handlers
@@ -16,27 +17,18 @@ namespace resp {
 	using cb_t = status (*)(char* data);
 
 	// Key-value struct used for internally mapping functions to resp commands
-	struct cb_lookup_t {
-		const char* key;
+	struct rcmd_t {
+		const char* name;
 		resp::cb_t	cb;
 	};
 
 	/**
-	 * @brief Contains all the callbacks for the different commands. Leave null
-	 * for unimplemented commands.
+	 * @brief Parse RESP messages into usable user-defined data structures
+	 *
+	 * @param cmds Array of commands
+	 * @param ncmds Length of cmds
+	 * @param data Pointer to the data to parse
+	 * @return status - Handler error code
 	 */
-	struct callbacks {
-		// Invalid command
-		cb_t INV = NULL;
-		// Error (-ERR message)
-		cb_t ERR = NULL;
-		// Get (+GET)
-		cb_t GET = NULL;
-		// Put (+PUT)
-		cb_t PUT = NULL;
-		// Delete (+DEL)
-		cb_t DEL = NULL;
-	};
-
-	status parse(callbacks& cbs, char* data);
+	status parse(const rcmd_t cmds[], size_t ncmds, char* data);
 }; // namespace resp

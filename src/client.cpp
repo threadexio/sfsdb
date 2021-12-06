@@ -10,14 +10,8 @@
 #include "resp/resp.hpp"
 
 static resp::status invalid(char* data) {
-	std::cout << "invalid command\n";
+	std::cout << "invalid response\n";
 	return resp::status::NCMD;
-}
-
-static resp::status get(char* data) {
-	std::cout << "get command\n";
-
-	return resp::status::OK;
 }
 
 static resp::status err(char* data) {
@@ -28,8 +22,15 @@ static resp::status err(char* data) {
 	return resp::status::OK;
 }
 
+static resp::status ok(char* data) {
+	std::cout << "OK!\n";
+	return resp::status::OK;
+}
+
+static const resp::rcmd_t cmds[] = {
+	{"_ERR", err}, {"_INV", invalid}, {"OK", ok}};
+
 int main() {
-	/*
 	auto e = nio::error();
 
 	auto cli = nio::ip::v4::client4(e, nio::ip::v4::addr4("127.0.0.1", 8888));
@@ -44,21 +45,12 @@ int main() {
 		return 1;
 	}
 
-	nio::buffer buf((void*)"1234567890123456", 16);
+	nio::buffer buf((void*)"+GET\r\n:1234\r\n", 14);
 	stream.write(e, buf);
 
-	std::cout << "Echoed: " << (char*)stream.read(e, 16).content() << "\n";
+	buf.clear();
+	buf = stream.read(e, 256);
+	std::cout << (int)resp::parse(cmds, RESP_COUNT(cmds), buf) << "\n";
 
 	return 0;
-	*/
-
-	const char* test = "-Test error\r\n:-1234\r\n$17\r\nis\n\r is my "
-					   "data\r\n:123456789\r\n+simple string\r\n";
-
-	resp::callbacks cbs;
-	cbs.INV = invalid;
-	cbs.ERR = err;
-	cbs.GET = get;
-
-	std::cout << "resp::parse = " << (int)resp::parse(cbs, (char*)test) << "\n";
 }
