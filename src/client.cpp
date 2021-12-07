@@ -50,7 +50,7 @@ int main() {
 
 	buf.clear();
 	buf = stream.read(e, 256);
-	std::cout << (int)resp::parse(cmds, RESP_COUNT(cmds), buf) << "\n";
+	std::cout << (int)resp::parse(cmds, buf) << "\n";
 
 	return 0;
 }

@@ -51,7 +51,7 @@ int main() {
 
 		nio::buffer data = stream.read(e, 256, 0);
 
-		resp::parse(cmds, RESP_COUNT(cmds), data);
+		resp::parse(cmds, data);
 
 		data.clear();
 		data.write("+OK\r\n");
