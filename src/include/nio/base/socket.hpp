@@ -5,7 +5,7 @@
 namespace nio {
 	namespace base {
 		class _sock {
-			public:
+		public:
 			/**
 			 * @brief Get the underlying socket file descriptor.
 			 */
@@ -20,7 +20,7 @@ namespace nio {
 				close(sock);
 			}
 
-			protected:
+		protected:
 			int sock;
 		};
 	} // namespace base

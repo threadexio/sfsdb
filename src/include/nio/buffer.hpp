@@ -12,7 +12,7 @@ namespace nio {
 	 * @brief Generic buffer class to hold a dynamically allocated byte buffer.
 	 */
 	class buffer {
-		public:
+	public:
 		buffer() {};
 
 		/**
@@ -126,7 +126,7 @@ namespace nio {
 
 		operator char*();
 
-		private:
+	private:
 		size_t				 pos = 0;
 		std::vector<uint8_t> vec;
 	};

@@ -4,7 +4,7 @@
 
 namespace nio {
 	class error {
-		public:
+	public:
 		int			err = 0;
 		std::string msg;
 

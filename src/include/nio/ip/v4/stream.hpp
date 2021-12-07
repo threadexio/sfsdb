@@ -11,7 +11,7 @@ namespace nio {
 			 * unless absolutely needed.
 			 */
 			class stream4 : public base::stream<addr4> {
-				public:
+			public:
 				/**
 				 * @brief Create a new IPv4 stream on _sock.
 				 *

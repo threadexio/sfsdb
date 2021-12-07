@@ -14,7 +14,7 @@ namespace nio {
 		 */
 		template <class T>
 		class addr {
-			public:
+		public:
 			/**
 			 * @brief Get the address in a human readable way.
 			 *
@@ -55,7 +55,7 @@ namespace nio {
 
 			virtual operator sockaddr*() = 0;
 
-			protected:
+		protected:
 			T		  saddr;
 			socklen_t slen;
 

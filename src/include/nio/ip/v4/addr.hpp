@@ -10,7 +10,7 @@ namespace nio {
 	namespace ip {
 		namespace v4 {
 			class addr4 : public base::addr<sockaddr_in> {
-				public:
+			public:
 				addr4();
 
 				/**
@@ -52,7 +52,7 @@ namespace nio {
 
 				operator sockaddr*();
 
-				private:
+			private:
 				void _setup();
 			};
 		} // namespace v4

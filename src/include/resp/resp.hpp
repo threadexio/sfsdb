@@ -26,7 +26,7 @@ namespace resp {
 	 * @brief RESP command parser
 	 */
 	class parser {
-		public:
+	public:
 		/**
 		 * @brief Create a new RESP parser with _cmds
 		 *
@@ -60,7 +60,7 @@ namespace resp {
 		 */
 		status parse(char* data);
 
-		private:
+	private:
 		cb_t cb_inv = NULL;
 		cb_t cb_err = NULL;
 

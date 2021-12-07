@@ -14,7 +14,7 @@ namespace nio {
 		 */
 		template <class T, class E>
 		class server : public _sock {
-			public:
+		public:
 			/**
 			 * @brief Bind to the server address.
 			 *
@@ -38,7 +38,7 @@ namespace nio {
 			 */
 			virtual E Accept(error& _err) = 0;
 
-			protected:
+		protected:
 			T server;
 		};
 

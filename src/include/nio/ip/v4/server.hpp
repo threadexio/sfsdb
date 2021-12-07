@@ -12,7 +12,7 @@ namespace nio {
 			 * @brief An IPv4 server.
 			 */
 			class server4 : public base::server<addr4, stream4> {
-				public:
+			public:
 				/**
 				 * @brief Create a new IPv4 server that will listen on _server.
 				 *

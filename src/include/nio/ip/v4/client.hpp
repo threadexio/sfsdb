@@ -12,7 +12,7 @@ namespace nio {
 			 * @brief An IPv4 client.
 			 */
 			class client4 : public base::client<addr4, stream4> {
-				public:
+			public:
 				/**
 				 * @brief Create a new IPv4 client which will connect to
 				 * _remote.

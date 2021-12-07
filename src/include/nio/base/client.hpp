@@ -14,7 +14,7 @@ namespace nio {
 		 */
 		template <class T, class E>
 		class client : public _sock {
-			public:
+		public:
 			/**
 			 * @brief Connect to a remote endpoint.
 			 *
@@ -23,7 +23,7 @@ namespace nio {
 			 */
 			virtual E Connect(error& _err) = 0;
 
-			protected:
+		protected:
 			T remote;
 		};
 

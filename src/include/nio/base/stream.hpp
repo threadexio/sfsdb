@@ -16,7 +16,7 @@ namespace nio {
 		 */
 		template <class T>
 		class stream : public _sock {
-			public:
+		public:
 			/**
 			 * @brief Read from the stream _size bytes.
 			 *
@@ -62,7 +62,7 @@ namespace nio {
 				return _peer;
 			};
 
-			protected:
+		protected:
 			T _peer;
 		};
 	} // namespace base
