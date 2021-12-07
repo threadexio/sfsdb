@@ -1,5 +1,6 @@
 #include "nio/ip/v4/client.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 
@@ -11,7 +12,7 @@
 
 static resp::status invalid(char* data) {
 	std::cout << "invalid response\n";
-	return resp::status::NCMD;
+	return resp::status::OK;
 }
 
 static resp::status err(char* data) {
@@ -33,6 +34,8 @@ static const resp::rcmd_t cmds[] = {
 int main() {
 	auto e = nio::error();
 
+	resp::parser parser(cmds);
+
 	auto cli = nio::ip::v4::client4(e, nio::ip::v4::addr4("127.0.0.1", 8888));
 	if (e) {
 		std::cout << e.err << ": " << e.msg << "\n";
@@ -50,7 +53,7 @@ int main() {
 
 	buf.clear();
 	buf = stream.read(e, 256);
-	std::cout << (int)resp::parse(cmds, buf) << "\n";
+	std::cout << (int)parser.parse(buf) << "\n";
 
 	return 0;
 }

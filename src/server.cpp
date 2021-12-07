@@ -19,7 +19,7 @@ static resp::status get(char* data) {
 
 static resp::status invalid(char* data) {
 	std::cout << "invalid command\n";
-	return resp::status::NCMD;
+	return resp::status::ECMD;
 }
 
 static resp::status error(char* data) {
@@ -31,7 +31,8 @@ static const resp::rcmd_t cmds[] = {
 	{"_ERR", error}, {"_INV", invalid}, {"GET", get}};
 
 int main() {
-	auto e = nio::error();
+	auto		 e = nio::error();
+	resp::parser parser(cmds);
 
 	auto srv = nio::ip::v4::server4(e, nio::ip::v4::addr4("127.0.0.1", 8888));
 
@@ -51,7 +52,7 @@ int main() {
 
 		nio::buffer data = stream.read(e, 256, 0);
 
-		resp::parse(cmds, data);
+		parser.parse(data);
 
 		data.clear();
 		data.write("+OK\r\n");
