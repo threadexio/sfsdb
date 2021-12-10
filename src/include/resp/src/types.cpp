@@ -28,8 +28,10 @@ resp::types::integer::integer(char*& _data) {
 	_data += 2;
 }
 
-size_t resp::types::integer::serialize(char* _data) const {
-	return sprintf(_data, ":%ld\r\n", value);
+size_t resp::types::integer::serialize(char*& _data) const {
+	size_t s = sprintf(_data, ":%ld\r\n", value);
+	_data += s;
+	return s;
 }
 
 resp::types::bulkstr::bulkstr(const char* _data) {
@@ -62,8 +64,10 @@ resp::types::bulkstr::~bulkstr() {
 	delete[] value;
 }
 
-size_t resp::types::bulkstr::serialize(char* _data) const {
-	return sprintf(_data, "$%ld\r\n%s\r\n", length, value);
+size_t resp::types::bulkstr::serialize(char*& _data) const {
+	size_t s = sprintf(_data, "$%ld\r\n%s\r\n", length, value);
+	_data += s;
+	return s;
 }
 
 resp::types::simstr::simstr(const char* _data) {
@@ -96,8 +100,10 @@ resp::types::simstr::~simstr() {
 	delete[] value;
 }
 
-size_t resp::types::simstr::serialize(char* _data) const {
-	return sprintf(_data, "+%s\r\n", value);
+size_t resp::types::simstr::serialize(char*& _data) const {
+	size_t s = sprintf(_data, "+%s\r\n", value);
+	_data += s;
+	return s;
 }
 
 resp::types::error::error(const char* _data) {
@@ -129,6 +135,8 @@ resp::types::error::~error() {
 	delete[] value;
 }
 
-size_t resp::types::error::serialize(char* _data) const {
-	return sprintf(_data, "-%s\r\n", value);
+size_t resp::types::error::serialize(char*& _data) const {
+	size_t s = sprintf(_data, "-%s\r\n", value);
+	_data += s;
+	return s;
 }

@@ -12,7 +12,7 @@ namespace resp {
 		struct base {
 			T value = 0;
 
-			virtual size_t serialize(char* _data) const = 0;
+			virtual size_t serialize(char*& _data) const = 0;
 		};
 
 		struct sbase : public base<char*> {
@@ -34,7 +34,7 @@ namespace resp {
 			 */
 			integer(char*& _data);
 
-			size_t serialize(char* _data) const;
+			size_t serialize(char*& _data) const;
 		};
 
 		struct simstr : public sbase {
@@ -54,7 +54,7 @@ namespace resp {
 
 			~simstr();
 
-			size_t serialize(char* _data) const;
+			size_t serialize(char*& _data) const;
 		};
 
 		struct bulkstr : public sbase {
@@ -74,7 +74,7 @@ namespace resp {
 
 			~bulkstr();
 
-			size_t serialize(char* _data) const;
+			size_t serialize(char*& _data) const;
 		};
 
 		struct error : sbase {
@@ -94,7 +94,7 @@ namespace resp {
 
 			~error();
 
-			size_t serialize(char* _data) const;
+			size_t serialize(char*& _data) const;
 		};
 	} // namespace types
 } // namespace resp

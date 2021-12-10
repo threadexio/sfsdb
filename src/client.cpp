@@ -10,26 +10,20 @@
 #include "resp/resp.hpp"
 #include "resp/types.hpp"
 
-static resp::status invalid(char* data) {
-	std::cout << "invalid response\n";
-	return resp::status::OK;
-}
-
-static resp::status err(char* data) {
+static int err(char* data) {
 	resp::types::error err(data);
 
 	std::cout << "Error: " << err.value << "\n";
 
-	return resp::status::OK;
+	return 1;
 }
 
-static resp::status ok(char* data) {
-	std::cout << "OK!\n";
-	return resp::status::OK;
+static int ok(char* data) {
+	std::cout << "everything is ok!\n";
+	return 0;
 }
 
-static const resp::rcmd_t cmds[] = {
-	{"_ERR", err}, {"_INV", invalid}, {"OK", ok}};
+static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 
 int main() {
 	auto e = nio::error();
@@ -48,18 +42,26 @@ int main() {
 		return 1;
 	}
 
-	nio::buffer buf(1024);
+	// Prepare our command
+	nio::buffer buf(256);
 
 	char* head = buf;
 
-	head += resp::types::simstr("GET").serialize(head);
-	head += resp::types::integer(123456789).serialize(head);
+	resp::types::simstr("GET").serialize(head);
+	resp::types::integer(123456789).serialize(head);
 
+	// Send our command
 	stream.write(e, buf);
 
-	buf.clear();
-	buf = stream.read(e, 256);
-	std::cout << (int)parser.parse(buf) << "\n";
+	// Read and parse the response
+	buf			= stream.read(e, 256);
+	auto result = parser.parse(buf);
+
+	std::cout << "response: " << result << "\n";
+
+	if (result > 0) {
+		stream.shutdown();
+	}
 
 	return 0;
 }

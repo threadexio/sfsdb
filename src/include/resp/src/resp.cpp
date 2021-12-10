@@ -5,7 +5,7 @@
 #define RESP_CALL_IFN_NULL(x, d)                                               \
 	{                                                                          \
 		if (x == NULL)                                                         \
-			return resp::status::EIMPL;                                        \
+			return 0;                                                          \
 		else                                                                   \
 			return x(d);                                                       \
 	}
@@ -14,7 +14,7 @@ resp::parser::~parser() {
 	delete[] cmds;
 }
 
-resp::status resp::parser::parse(char *data) {
+int resp::parser::parse(char *data) {
 	if (*data != '+' && *data != '-') { // if the request doesnt begin with
 										// a - or + then it is not valid
 		RESP_CALL_IFN_NULL(cb_inv, data);
@@ -27,5 +27,5 @@ resp::status resp::parser::parse(char *data) {
 		if (strcmp(cmds[i].name, command.value) == 0)
 			RESP_CALL_IFN_NULL(cmds[i].cb, data);
 
-	return status::ECMD;
+	RESP_CALL_IFN_NULL(cb_inv, data);
 }
