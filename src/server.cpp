@@ -56,7 +56,6 @@ int main() {
 
 		data.clear();
 		data.write("+OK\r\n");
-		std::cout << data.length() << "\n";
 		stream.write(e, data);
 
 		stream.shutdown();

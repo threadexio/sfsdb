@@ -48,7 +48,13 @@ int main() {
 		return 1;
 	}
 
-	nio::buffer buf((void*)"+GET\r\n:1234\r\n", 14);
+	nio::buffer buf(1024);
+
+	char* head = buf;
+
+	head += resp::components::simstr("GET").serialize(head);
+	head += resp::components::integer(123456789).serialize(head);
+
 	stream.write(e, buf);
 
 	buf.clear();

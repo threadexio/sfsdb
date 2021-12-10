@@ -1,5 +1,7 @@
 #include "resp.hpp"
 
+#include "components.hpp"
+
 #define RESP_CALL_IFN_NULL(x, d)                                               \
 	{                                                                          \
 		if (x == NULL)                                                         \
@@ -20,7 +22,7 @@ resp::status resp::parser::parse(char *data) {
 		RESP_CALL_IFN_NULL(cb_err, data);
 	}
 
-	components::string command(data);
+	components::simstr command(data);
 	for (size_t i = 0; i < len; i++)
 		if (strcmp(cmds[i].name, command.value) == 0)
 			RESP_CALL_IFN_NULL(cmds[i].cb, data);
