@@ -1,6 +1,8 @@
 #include "nio/ip/v4/server.hpp"
 
+#include <asm-generic/socket.h>
 #include <signal.h>
+#include <sys/socket.h>
 
 #include <cstdint>
 #include <iostream>
@@ -40,6 +42,9 @@ _INV is the callback for invalid commands (not needed on the client)
 */
 
 int main() {
+	int enable = 1;
+	setsockopt(srv.raw(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
 
