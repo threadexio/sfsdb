@@ -1,13 +1,13 @@
-#include "components.hpp"
+#include "types.hpp"
 
 #include <cstdio>
 #include <cstring>
 
-resp::components::integer::integer(int64_t _value) {
+resp::types::integer::integer(int64_t _value) {
 	value = _value;
 }
 
-resp::components::integer::integer(char*& _data) {
+resp::types::integer::integer(char*& _data) {
 	if (*_data != ':')
 		return;
 
@@ -28,17 +28,17 @@ resp::components::integer::integer(char*& _data) {
 	_data += 2;
 }
 
-size_t resp::components::integer::serialize(char* _data) const {
+size_t resp::types::integer::serialize(char* _data) const {
 	return sprintf(_data, ":%ld\r\n", value);
 }
 
-resp::components::bulkstr::bulkstr(const char* _data) {
+resp::types::bulkstr::bulkstr(const char* _data) {
 	length = strlen(_data);
 	value  = new char[length + 1];
 	std::memcpy(value, _data, length);
 }
 
-resp::components::bulkstr::bulkstr(char*& _data) {
+resp::types::bulkstr::bulkstr(char*& _data) {
 	if (*_data != '$')
 		return;
 
@@ -58,21 +58,21 @@ resp::components::bulkstr::bulkstr(char*& _data) {
 	_data += length + 2;
 }
 
-resp::components::bulkstr::~bulkstr() {
+resp::types::bulkstr::~bulkstr() {
 	delete[] value;
 }
 
-size_t resp::components::bulkstr::serialize(char* _data) const {
+size_t resp::types::bulkstr::serialize(char* _data) const {
 	return sprintf(_data, "$%ld\r\n%s\r\n", length, value);
 }
 
-resp::components::simstr::simstr(const char* _data) {
+resp::types::simstr::simstr(const char* _data) {
 	length = strlen(_data);
 	value  = new char[length + 1];
 	std::memcpy(value, _data, length);
 }
 
-resp::components::simstr::simstr(char*& _data) {
+resp::types::simstr::simstr(char*& _data) {
 	if (*_data != '+')
 		return;
 
@@ -92,21 +92,21 @@ resp::components::simstr::simstr(char*& _data) {
 	_data += length + 2;
 }
 
-resp::components::simstr::~simstr() {
+resp::types::simstr::~simstr() {
 	delete[] value;
 }
 
-size_t resp::components::simstr::serialize(char* _data) const {
+size_t resp::types::simstr::serialize(char* _data) const {
 	return sprintf(_data, "+%s\r\n", value);
 }
 
-resp::components::error::error(const char* _data) {
+resp::types::error::error(const char* _data) {
 	length = strlen(_data);
 	value  = new char[length + 1];
 	std::memcpy(value, _data, length);
 }
 
-resp::components::error::error(char*& _data) {
+resp::types::error::error(char*& _data) {
 	if (*_data != '-')
 		return;
 
@@ -125,10 +125,10 @@ resp::components::error::error(char*& _data) {
 	_data += length + 2;
 }
 
-resp::components::error::~error() {
+resp::types::error::~error() {
 	delete[] value;
 }
 
-size_t resp::components::error::serialize(char* _data) const {
+size_t resp::types::error::serialize(char* _data) const {
 	return sprintf(_data, "-%s\r\n", value);
 }

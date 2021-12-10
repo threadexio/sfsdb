@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "components.hpp"
+#include "types.hpp"
 
 namespace resp {
 	// Status codes from the callbacks

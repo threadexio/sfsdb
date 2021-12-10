@@ -7,8 +7,8 @@
 #include "nio/buffer.hpp"
 #include "nio/error.hpp"
 #include "nio/ip/v4/addr.hpp"
-#include "resp/components.hpp"
 #include "resp/resp.hpp"
+#include "resp/types.hpp"
 
 static resp::status invalid(char* data) {
 	std::cout << "invalid response\n";
@@ -16,7 +16,7 @@ static resp::status invalid(char* data) {
 }
 
 static resp::status err(char* data) {
-	resp::components::error err(data);
+	resp::types::error err(data);
 
 	std::cout << "Error: " << err.value << "\n";
 
@@ -52,8 +52,8 @@ int main() {
 
 	char* head = buf;
 
-	head += resp::components::simstr("GET").serialize(head);
-	head += resp::components::integer(123456789).serialize(head);
+	head += resp::types::simstr("GET").serialize(head);
+	head += resp::types::integer(123456789).serialize(head);
 
 	stream.write(e, buf);
 

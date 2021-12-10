@@ -6,11 +6,11 @@
 #include "nio/buffer.hpp"
 #include "nio/error.hpp"
 #include "nio/ip/v4/addr.hpp"
-#include "resp/components.hpp"
 #include "resp/resp.hpp"
+#include "resp/types.hpp"
 
 static resp::status get(char* data) {
-	resp::components::integer len(data);
+	resp::types::integer len(data);
 
 	std::cout << "len = " << len.value << "\n";
 

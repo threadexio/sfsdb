@@ -6,7 +6,7 @@
 #include <cstring>
 
 namespace resp {
-	namespace components {
+	namespace types {
 
 		template <typename T>
 		struct base {
@@ -96,5 +96,5 @@ namespace resp {
 
 			size_t serialize(char* _data) const;
 		};
-	} // namespace components
+	} // namespace types
 } // namespace resp
