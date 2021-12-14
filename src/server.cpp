@@ -1,10 +1,10 @@
 #include "nio/ip/v4/server.hpp"
 
-#include <asm-generic/socket.h>
 #include <signal.h>
 #include <sys/socket.h>
 
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 
 #include "nio/buffer.hpp"
@@ -23,11 +23,11 @@ static void exit_handler(int sig) {
 }
 
 static int get(char* data) {
+	std::cout << __FUNCTION__ << ": " << data << "\n";
+
 	resp::types::integer len(data);
 
-	std::cout << "len = " << len.value << "\n";
-
-	return 0;
+	return len.value;
 }
 
 static int invalid(char* data) {
@@ -70,21 +70,19 @@ int main() {
 		nio::buffer data   = stream.read(e, 256);
 		auto		result = parser.parse(data);
 
-		std::cout << "Parse result: " << result << "\n";
-
 		// We need another pointer here because it is going to be changed by
 		// serialize()
 		char* head = data;
 
 		// Do all of the data processing inside the callbacks and respond from
 		// here
-		if (result > 0) {
+		if (result % 2) {
 			resp::types::error("Some error message").serialize(head);
 		} else {
 			resp::types::simstr("OK").serialize(head);
 		}
 
-		stream.write(e, data);
+		stream.write(e, data, strlen(data));
 
 		stream.shutdown();
 	}

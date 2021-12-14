@@ -43,13 +43,19 @@ namespace nio {
 			 *
 			 * @param _err Check this for any errors
 			 * @param _data The data to write
+			 * @param _len Size of the data (in bytes), 0 means the whole buffer
 			 * @param _flags Special send() flags. See `man 3 send`
 			 * @return size_t Number of bytes written to the stream
 			 */
-			size_t write(error& _err, const buffer& _data, int _flags = 0) {
-				int written_bytes =
-					send(sock, _data.data(), _data.length(), _flags);
-				_err = errno;
+			size_t write(error&		   _err,
+						 const buffer& _data,
+						 size_t		   _len	  = 0,
+						 int		   _flags = 0) {
+				int written_bytes = send(sock,
+										 _data.data(),
+										 (_len == 0) ? _data.length() : _len,
+										 _flags);
+				_err			  = errno;
 				return written_bytes;
 			}
 

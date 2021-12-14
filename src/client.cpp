@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #include "nio/buffer.hpp"
@@ -26,6 +28,8 @@ static int ok(char* data) {
 static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 
 int main() {
+	srand(time(NULL));
+
 	auto e = nio::error();
 
 	resp::parser parser(cmds);
@@ -48,10 +52,10 @@ int main() {
 	char* head = buf;
 
 	resp::types::simstr("GET").serialize(head);
-	resp::types::integer(123456789).serialize(head);
+	resp::types::integer(rand()).serialize(head);
 
 	// Send our command
-	stream.write(e, buf);
+	stream.write(e, buf, strlen(buf));
 
 	// Read and parse the response
 	buf			= stream.read(e, 256);
