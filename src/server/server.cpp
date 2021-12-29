@@ -1,17 +1,10 @@
 #include "nio/ip/v4/server.hpp"
 
 #include <signal.h>
-#include <sys/socket.h>
 
-#include <cstdint>
-#include <cstring>
 #include <iostream>
 
-#include "nio/buffer.hpp"
-#include "nio/error.hpp"
-#include "nio/ip/v4/addr.hpp"
 #include "resp/resp.hpp"
-#include "resp/types.hpp"
 
 nio::error			 e;
 nio::ip::v4::server4 srv(e, nio::ip::v4::addr4("127.0.0.1", 8888));

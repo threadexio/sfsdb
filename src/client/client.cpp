@@ -1,16 +1,8 @@
 #include "nio/ip/v4/client.hpp"
 
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 
-#include "nio/buffer.hpp"
-#include "nio/error.hpp"
-#include "nio/ip/v4/addr.hpp"
 #include "resp/resp.hpp"
-#include "resp/types.hpp"
 
 static int err(char* data) {
 	resp::types::error err(data);
