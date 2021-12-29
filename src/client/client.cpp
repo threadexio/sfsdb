@@ -3,6 +3,8 @@
 #include <iostream>
 
 #include "resp/resp.hpp"
+#include "resp/types.hpp"
+#include "uid.hpp"
 
 static int err(char* data) {
 	resp::types::error err(data);
@@ -22,7 +24,8 @@ static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 int main() {
 	srand(time(NULL));
 
-	auto e = nio::error();
+	auto uidgen = uid::generator();
+	auto e		= nio::error();
 
 	resp::parser parser(cmds);
 
@@ -44,7 +47,7 @@ int main() {
 	char* head = buf;
 
 	resp::types::simstr("GET").serialize(head);
-	resp::types::integer(rand()).serialize(head);
+	resp::types::bulkstr(uidgen.generate().c_str()).serialize(head);
 
 	// Send our command
 	stream.write(e, buf, strlen(buf));

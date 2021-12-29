@@ -16,11 +16,11 @@ static void exit_handler(int sig) {
 }
 
 static int get(char* data) {
-	std::cout << __FUNCTION__ << ": " << data << "\n";
+	// resp::types::integer len(data);
+	resp::types::bulkstr uid = data;
 
-	resp::types::integer len(data);
-
-	return len.value;
+	std::cout << "Uid: " << uid.value << "\n";
+	return 0;
 }
 
 static int invalid(char* data) {
