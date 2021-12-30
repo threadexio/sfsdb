@@ -39,7 +39,7 @@ namespace nio {
 			virtual E Accept(error& _err) = 0;
 
 		protected:
-			T server;
+			T srv;
 		};
 
 	} // namespace base

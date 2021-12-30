@@ -6,8 +6,8 @@
 
 #include "resp/resp.hpp"
 
-nio::error			 e;
-nio::ip::v4::server4 srv(e, nio::ip::v4::addr4("127.0.0.1", 8888));
+nio::error			e;
+nio::ip::v4::server srv(e, nio::ip::v4::addr("127.0.0.1", 8888));
 
 static void exit_handler(int sig) {
 	srv.shutdown();

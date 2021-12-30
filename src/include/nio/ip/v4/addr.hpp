@@ -9,18 +9,18 @@
 namespace nio {
 	namespace ip {
 		namespace v4 {
-			class addr4 : public base::addr<sockaddr_in> {
+			class addr : public base::addr<sockaddr_in> {
 			public:
-				addr4();
+				addr();
 
 				/**
-				 * @brief Create a new addr4 object the represents the endpoint
+				 * @brief Create a new addr object the represents the endpoint
 				 * _ip:_port
 				 *
 				 * @param _ip
 				 * @param _port
 				 */
-				addr4(const std::string& _ip, in_port_t _port);
+				addr(const std::string& _ip, in_port_t _port);
 
 				/**
 				 * @brief Get the IP address.

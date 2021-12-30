@@ -28,7 +28,7 @@ int main() {
 
 	resp::parser parser(cmds);
 
-	auto cli = nio::ip::v4::client4(e, nio::ip::v4::addr4("127.0.0.1", 8888));
+	auto cli = nio::ip::v4::client(e, nio::ip::v4::addr("127.0.0.1", 8888));
 	if (e) {
 		std::cout << e.err << ": " << e.msg << "\n";
 		return 1;

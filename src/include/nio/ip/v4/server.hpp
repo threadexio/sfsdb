@@ -11,7 +11,7 @@ namespace nio {
 			/**
 			 * @brief An IPv4 server.
 			 */
-			class server4 : public base::server<addr4, stream4> {
+			class server : public base::server<addr, stream> {
 			public:
 				/**
 				 * @brief Create a new IPv4 server that will listen on _server.
@@ -19,7 +19,7 @@ namespace nio {
 				 * @param _err Check this for any errors
 				 * @param _server
 				 */
-				server4(error& _err, const addr4& _server);
+				server(error& _err, const addr& _server);
 
 				/**
 				 * @brief Bind to the specified address and get ready to listen.
@@ -42,9 +42,9 @@ namespace nio {
 				 * @brief Accept an incoming connection.
 				 *
 				 * @param _err Check this for any errors
-				 * @return stream4 - The new connection.
+				 * @return stream - The new connection.
 				 */
-				stream4 Accept(error& _err);
+				stream Accept(error& _err);
 			};
 		} // namespace v4
 	}	  // namespace ip

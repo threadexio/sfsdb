@@ -5,38 +5,38 @@
 #include <string.h>
 #include <sys/socket.h>
 
-nio::ip::v4::addr4::addr4() {
+nio::ip::v4::addr::addr() {
 	_setup();
 }
 
-nio::ip::v4::addr4::addr4(const std::string& _ip, in_port_t _port) {
+nio::ip::v4::addr::addr(const std::string& _ip, in_port_t _port) {
 	_setup();
 
 	ip(_ip);
 	port(_port);
 }
 
-std::string nio::ip::v4::addr4::ip() const {
+std::string nio::ip::v4::addr::ip() const {
 	return inet_ntoa(saddr.sin_addr);
 }
 
-void nio::ip::v4::addr4::ip(const std::string& _ip) {
+void nio::ip::v4::addr::ip(const std::string& _ip) {
 	saddr.sin_addr.s_addr = inet_addr(_ip.c_str());
 }
 
-in_port_t nio::ip::v4::addr4::port() const {
+in_port_t nio::ip::v4::addr::port() const {
 	return ntohs(saddr.sin_port);
 }
 
-void nio::ip::v4::addr4::port(in_port_t _port) {
+void nio::ip::v4::addr::port(in_port_t _port) {
 	saddr.sin_port = htons(_port);
 }
 
-nio::ip::v4::addr4::operator sockaddr*() {
+nio::ip::v4::addr::operator sockaddr*() {
 	return (sockaddr*)&saddr;
 }
 
-void nio::ip::v4::addr4::_setup() {
+void nio::ip::v4::addr::_setup() {
 	slen = sizeof(saddr);
 	memset(&saddr, 0, slen);
 	saddr.sin_family = AF_INET;
