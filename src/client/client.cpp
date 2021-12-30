@@ -22,10 +22,9 @@ static int ok(char* data) {
 static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 
 int main() {
-	srand(time(NULL));
+	uid::generator uidgen;
 
-	auto uidgen = uid::generator();
-	auto e		= nio::error();
+	auto e = nio::error();
 
 	resp::parser parser(cmds);
 
@@ -47,7 +46,7 @@ int main() {
 	char* head = buf;
 
 	resp::types::simstr("GET").serialize(head);
-	resp::types::bulkstr(uidgen.generate().c_str()).serialize(head);
+	resp::types::bulkstr(uidgen.get()).serialize(head);
 
 	// Send our command
 	stream.write(e, buf, strlen(buf));
