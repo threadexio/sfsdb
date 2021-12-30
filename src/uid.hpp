@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
-#include <string>
 
 /*
  * Format:
@@ -47,22 +46,7 @@ namespace uid {
 		 *
 		 * @param _rdata Pointer to the random data
 		 */
-		uid_type(const char *_rdata) {
-			uint64_t timestamp =
-				std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::system_clock::now().time_since_epoch())
-					.count();
-
-			snprintf(_data,
-					 UID_TOTAL_LEN + 1,
-					 "%08x" UID_SEPARATOR "%04x" UID_SEPARATOR
-					 "%04x" UID_SEPARATOR "%04x" UID_SEPARATOR "%08x",
-					 (uint32_t)(timestamp & 0x0000ffff),
-					 (uint16_t)(timestamp & 0x00ff0000),
-					 (uint16_t)(timestamp & 0xff000000),
-					 *(uint16_t *)(_rdata),
-					 *(uint32_t *)(_rdata + sizeof(uint16_t)));
-		}
+		uid_type(const char *_rdata);
 
 		inline operator const char *() const {
 			return _data;
@@ -79,28 +63,20 @@ namespace uid {
 		 *
 		 * @param dev File/Device to read random data from
 		 */
-		generator(const char *dev = UID_RAND_DEV) {
-			rdev = std::fstream(dev, std::ios::in);
-		}
+		generator(const char *dev = UID_RAND_DEV);
 
 		// std::fstream also deletes these, so we cant use them
 		generator(const generator &other) noexcept = delete;
 		generator(generator &&other) noexcept	   = delete;
 
-		~generator() {
-			rdev.close();
-		}
+		~generator();
 
 		/**
 		 * @brief Create a new uid.
 		 *
 		 * @return uid_type
 		 */
-		uid_type get() {
-			char data[UID_RDATA_LEN];
-			rdev.read(data, UID_RDATA_LEN);
-			return uid_type(data);
-		}
+		uid_type get();
 
 	private:
 		std::fstream rdev;
