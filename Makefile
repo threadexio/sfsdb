@@ -15,6 +15,11 @@ MAKEFLAGS += --no-print-directory
 
 #===============#
 
+BUILD_TESTS ?= n
+ifeq ($(BUILD_TESTS), y)
+	CMFLAGS += -DNIO_BUILD_TESTS:BOOL=ON -DRESP_BUILD_TESTS:BOOL=ON -DBUILD_TESTS:BOOL=ON
+endif
+
 .PHONY:
 all: build
 

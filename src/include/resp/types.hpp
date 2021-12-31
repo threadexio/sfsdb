@@ -34,6 +34,13 @@ namespace resp {
 			 */
 			integer(char*& _data);
 
+			/**
+			 * @brief Serialize and write value to _data, advancing the pointer
+			 * forward.
+			 *
+			 * @param _data Pointer to the buffer
+			 * @return size_t - Size of serialized data
+			 */
 			size_t serialize(char*& _data) const;
 		};
 
@@ -54,6 +61,13 @@ namespace resp {
 
 			~simstr();
 
+			/**
+			 * @brief Serialize and write value to _data, advancing the pointer
+			 * forward.
+			 *
+			 * @param _data Pointer to the buffer
+			 * @return size_t - Size of serialized data
+			 */
 			size_t serialize(char*& _data) const;
 		};
 
@@ -74,6 +88,13 @@ namespace resp {
 
 			~bulkstr();
 
+			/**
+			 * @brief Serialize and write value to _data, advancing the pointer
+			 * forward.
+			 *
+			 * @param _data Pointer to the buffer
+			 * @return size_t - Size of serialized data
+			 */
 			size_t serialize(char*& _data) const;
 		};
 
@@ -94,6 +115,13 @@ namespace resp {
 
 			~error();
 
+			/**
+			 * @brief Serialize and write value to _data, advancing the pointer
+			 * forward.
+			 *
+			 * @param _data Pointer to the buffer
+			 * @return size_t - Size of serialized data
+			 */
 			size_t serialize(char*& _data) const;
 		};
 	} // namespace types

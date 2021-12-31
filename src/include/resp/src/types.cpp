@@ -1,6 +1,5 @@
 #include "types.hpp"
 
-#include <cstdio>
 #include <cstring>
 
 resp::types::integer::integer(int64_t _value) {
@@ -38,6 +37,7 @@ resp::types::bulkstr::bulkstr(const char* _data) {
 	length = strlen(_data);
 	value  = new char[length + 1];
 	std::memcpy(value, _data, length);
+	value[length] = 0;
 }
 
 resp::types::bulkstr::bulkstr(char*& _data) {
@@ -53,10 +53,10 @@ resp::types::bulkstr::bulkstr(char*& _data) {
 
 	value = new char[length + 1];
 
-	// Null terminator
+	std::memcpy(value, _data, length);
+
 	value[length] = 0;
 
-	std::memcpy(value, _data, length);
 	_data += length + 2;
 }
 
@@ -74,6 +74,7 @@ resp::types::simstr::simstr(const char* _data) {
 	length = strlen(_data);
 	value  = new char[length + 1];
 	std::memcpy(value, _data, length);
+	value[length] = 0;
 }
 
 resp::types::simstr::simstr(char*& _data) {
@@ -89,10 +90,10 @@ resp::types::simstr::simstr(char*& _data) {
 
 	value = new char[length + 1];
 
-	// Null terminator
+	std::memcpy(value, _data, length);
+
 	value[length] = 0;
 
-	std::memcpy(value, _data, length);
 	_data += length + 2;
 }
 
@@ -110,6 +111,7 @@ resp::types::error::error(const char* _data) {
 	length = strlen(_data);
 	value  = new char[length + 1];
 	std::memcpy(value, _data, length);
+	value[length] = 0;
 }
 
 resp::types::error::error(char*& _data) {
@@ -125,9 +127,10 @@ resp::types::error::error(char*& _data) {
 
 	value = new char[length + 1];
 
+	std::memcpy(value, _data, length);
+
 	value[length] = 0;
 
-	std::memcpy(value, _data, length);
 	_data += length + 2;
 }
 
