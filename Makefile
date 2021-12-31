@@ -11,6 +11,10 @@ BUILD_TYPE ?= Debug
 
 #===============#
 
+MAKEFLAGS += --no-print-directory
+
+#===============#
+
 .PHONY:
 all: build
 
