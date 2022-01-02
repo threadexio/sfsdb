@@ -26,7 +26,7 @@
  * hex representation	(32)
  */
 
-#define UID_SEPARATOR "-"
+#define UID_SEPARATOR '-'
 #define UID_RDATA_LEN 6
 #define UID_DATA_LEN  14
 #define UID_TOTAL_LEN 32
@@ -35,26 +35,7 @@
 
 namespace uid {
 
-	/**
-	 * @brief Custom type to hold uids. std::string uses malloc(), not needed
-	 * for such small strings which can be on the stack.
-	 */
-	class uid_type {
-	public:
-		/**
-		 * @brief Create a new uid from random data.
-		 *
-		 * @param _rdata Pointer to the random data
-		 */
-		uid_type(const char *_rdata);
-
-		inline operator const char *() const {
-			return _data;
-		}
-
-	private:
-		char _data[UID_TOTAL_LEN + 1];
-	};
+	using uid_type = std::string;
 
 	class generator {
 	public:

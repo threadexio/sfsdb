@@ -1,23 +1,9 @@
 #include "uid.hpp"
 
+#include <chrono>
+#include <cstring>
+
 namespace uid {
-	uid_type::uid_type(const char *_rdata) {
-		uint64_t timestamp =
-			std::chrono::duration_cast<std::chrono::milliseconds>(
-				std::chrono::system_clock::now().time_since_epoch())
-				.count();
-
-		snprintf(_data,
-				 UID_TOTAL_LEN + 1,
-				 "%08x" UID_SEPARATOR "%04x" UID_SEPARATOR "%04x" UID_SEPARATOR
-				 "%04x" UID_SEPARATOR "%08x",
-				 (uint32_t)(timestamp & 0x0000ffff),
-				 (uint16_t)(timestamp & 0x00ff0000),
-				 (uint16_t)(timestamp & 0xff000000),
-				 *(uint16_t *)(_rdata),
-				 *(uint32_t *)(_rdata + sizeof(uint16_t)));
-	}
-
 	generator::generator(const char *dev) {
 		rdev = std::fstream(dev, std::ios::in);
 	}
@@ -26,8 +12,28 @@ namespace uid {
 		rdev.close();
 	}
 	uid_type generator::get() {
-		char data[UID_RDATA_LEN];
-		rdev.read(data, UID_RDATA_LEN);
-		return uid_type(data);
+		char _rdata[UID_RDATA_LEN];
+		rdev.read(_rdata, UID_RDATA_LEN);
+
+		uint64_t timestamp =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				std::chrono::system_clock::now().time_since_epoch())
+				.count();
+
+		uid_type ret;
+		ret.resize(UID_TOTAL_LEN);
+		snprintf(ret.data(),
+				 UID_TOTAL_LEN + 1,
+				 "%08x%c%04x%c%04x%c%04x%c%08x",
+				 (uint32_t)(timestamp & 0x0000ffff),
+				 UID_SEPARATOR,
+				 (uint16_t)(timestamp & 0x00ff0000),
+				 UID_SEPARATOR,
+				 (uint16_t)(timestamp & 0xff000000),
+				 UID_SEPARATOR,
+				 *(uint16_t *)(_rdata),
+				 UID_SEPARATOR,
+				 *(uint32_t *)(_rdata + sizeof(uint16_t)));
+		return ret;
 	}
 } // namespace uid

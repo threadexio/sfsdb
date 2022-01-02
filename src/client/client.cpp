@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "map.hpp"
 #include "resp/resp.hpp"
 #include "resp/types.hpp"
 #include "uid.hpp"
@@ -22,6 +23,18 @@ static int ok(char* data) {
 static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 
 int main() {
+	/*
+	map::map_type m("test1");
+	auto id1 = m.create();
+
+	for (auto& a : m.maps) { std::cout << m.name << " -> " << a << "\n"; }
+
+	m.remove(id1);
+	std::cout << "---------------------\n";
+
+	for (auto& a : m.maps) { std::cout << m.name << " -> " << a << "\n"; }
+	*/
+
 	uid::generator uidgen;
 
 	auto e = nio::error();
@@ -46,7 +59,7 @@ int main() {
 	char* head = buf;
 
 	resp::types::simstr("GET").serialize(head);
-	resp::types::bulkstr(uidgen.get()).serialize(head);
+	resp::types::bulkstr(uidgen.get().c_str()).serialize(head);
 
 	// Send our command
 	stream.write(e, buf, strlen(buf));
