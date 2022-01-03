@@ -16,7 +16,7 @@ namespace uid {
 		rdev.read(_rdata, UID_RDATA_LEN);
 
 		uint64_t timestamp =
-			std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::duration_cast<std::chrono::microseconds>(
 				std::chrono::system_clock::now().time_since_epoch())
 				.count();
 
