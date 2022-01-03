@@ -24,7 +24,6 @@ static_assert(! _char_equal(MAP_SEPARATOR, UID_SEPARATOR),
 			  "MAP and UID separators cannot be the same");
 
 namespace map {
-
 	struct map_type {
 		std::string				   name;
 		std::vector<uid::uid_type> ids;
@@ -58,7 +57,7 @@ namespace map {
 		 */
 		inline bool exists(const uid::uid_type& mid) {
 			for (auto& id : ids)
-				if (std::string_view(id.data()) == mid.data())
+				if (id == mid)
 					return true;
 			return false;
 		}
@@ -83,9 +82,8 @@ namespace map {
 	map_type by_id(const uid::uid_type& _id);
 
 	/**
-	 * @brief Create the directory structure @ dir. Leave empty for cwd.
+	 * @brief Create the directory structure @ cwd.
 	 *
-	 * @param dir
 	 */
-	void init(const std::string& dir = "");
+	void init();
 }; // namespace map

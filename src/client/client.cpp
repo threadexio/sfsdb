@@ -24,6 +24,7 @@ static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 
 int main() {
 	/*
+	map::init();
 	auto m	 = map::by_name("test1");
 	auto id1 = m.create();
 

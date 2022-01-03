@@ -9,7 +9,6 @@
 #include "uid.hpp"
 
 namespace map {
-
 	map_type::map_type(const std::string& _name) {
 		name = _name;
 
@@ -122,10 +121,10 @@ namespace map {
 		return map_type(_name);
 	}
 
-	void init(const std::string& dir) {
-		std::filesystem::create_directories(dir + MAP_DIR);
-		std::filesystem::create_directory(dir + MAP_ID_DIR);
-		std::filesystem::create_directory(dir + MAP_NAME_DIR);
+	void init() {
+		std::filesystem::create_directories(MAP_DIR);
+		std::filesystem::create_directory(MAP_ID_DIR);
+		std::filesystem::create_directory(MAP_NAME_DIR);
 	}
 
 }; // namespace map

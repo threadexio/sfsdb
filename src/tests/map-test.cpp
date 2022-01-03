@@ -26,7 +26,11 @@ static auto mappath =
 static const char* objname = "testobj";
 
 TEST_CASE("map tests", "[main]") {
-	map::init(mappath);
+	// Prepare directory and cd there
+	std::filesystem::create_directory(mappath);
+	std::filesystem::current_path(mappath);
+
+	map::init();
 
 	auto m = map::by_name(objname);
 
