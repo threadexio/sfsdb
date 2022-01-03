@@ -81,4 +81,11 @@ namespace map {
 	 * @return map_type
 	 */
 	map_type by_id(const uid::uid_type& _id);
+
+	/**
+	 * @brief Create the directory structure @ dir. Leave empty for cwd.
+	 *
+	 * @param dir
+	 */
+	void init(const std::string& dir = "");
 }; // namespace map

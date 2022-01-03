@@ -4,6 +4,7 @@ set(CATCH_MAIN_SRC main.cpp)
 
 set (TEST_TARGETS
 	uid-test
+	map-test
 )
 
 message(STATUS "Enabled tests")

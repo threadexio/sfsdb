@@ -122,4 +122,10 @@ namespace map {
 		return map_type(_name);
 	}
 
+	void init(const std::string& dir) {
+		std::filesystem::create_directories(dir + MAP_DIR);
+		std::filesystem::create_directory(dir + MAP_ID_DIR);
+		std::filesystem::create_directory(dir + MAP_NAME_DIR);
+	}
+
 }; // namespace map

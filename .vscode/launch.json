@@ -32,7 +32,7 @@
 			"program": "${workspaceRoot}/build/src/client",
 			"args": [],
 			"stopAtEntry": false,
-			"cwd": "/tmp/test",
+			"cwd": "${workspaceFolder}",
 			"environment": [],
 			"externalConsole": false,
 			"MIMode": "gdb",
