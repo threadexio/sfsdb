@@ -7,7 +7,9 @@
 
 #include "uid.hpp"
 
-#define MAP_DIR "map/"
+#define MAP_DIR		 "map/"
+#define MAP_ID_DIR	 MAP_DIR "by-id/"
+#define MAP_NAME_DIR MAP_DIR "by-name/"
 
 #define MAP_SEPARATOR '\n'
 
@@ -23,19 +25,29 @@ static_assert(! _char_equal(MAP_SEPARATOR, UID_SEPARATOR),
 
 namespace map {
 
-	static inline bool _check_file_exists(const std::string_view& name) {
-		return std::filesystem::exists(name);
-	}
-
 	struct map_type {
-	private:
-		std::string _path;
-
-	public:
 		std::string				   name;
-		std::vector<uid::uid_type> maps;
+		std::vector<uid::uid_type> ids;
 
 		map_type(const std::string& _name);
+
+		/**
+		 * @brief Create a mapping and return the uid that will refer to
+		 * it.
+		 *
+		 * @return uid::uid_type - ID of the new mapping
+		 */
+		uid::uid_type create();
+
+		/**
+		 * @brief Remove a mapping.
+		 *
+		 * @param name
+		 * @param mid Mapping id
+		 * @return true - When the mapping was successfully deleted
+		 * @return false - When there was an error
+		 */
+		bool remove(const uid::uid_type& mid);
 
 		/**
 		 * @brief Check if a mapping exists.
@@ -45,37 +57,28 @@ namespace map {
 		 * @return false - Mapping doesn't exist
 		 */
 		inline bool exists(const uid::uid_type& mid) {
-			for (auto& id : maps)
+			for (auto& id : ids)
 				if (std::string_view(id.data()) == mid.data())
 					return true;
 			return false;
 		}
-
-		/**
-		 * @brief Create a mapping and return the uid that will refer to
-		 * it.
-		 *
-		 * @return uid::uid_type - UID of the new mapping
-		 */
-		uid::uid_type create();
-
-		/**
-		 * @brief Remove a mapping.
-		 *
-		 * @param name
-		 * @param mid Mapping id
-		 * @return true - When the mapping was deleted
-		 * @return false - When there was an error
-		 */
-		bool remove(const uid::uid_type& mid);
 	};
 
 	/**
-	 * @brief Create a mapping for name and return the uid that will refer to
-	 * it.
+	 * @brief Retrieve by name.
 	 *
-	 * @param name Name to create the mapping for
-	 * @return uid::uid_type - UID of the new mapping
+	 * @param _name
+	 * @return map_type
 	 */
-	uid::uid_type create_mapping(const std::string& name);
+	inline map_type by_name(const std::string& _name) {
+		return map_type(_name);
+	}
+
+	/**
+	 * @brief Retrieve by id.
+	 *
+	 * @param _id
+	 * @return map_type
+	 */
+	map_type by_id(const uid::uid_type& _id);
 }; // namespace map

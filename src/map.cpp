@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,63 +11,28 @@
 namespace map {
 
 	map_type::map_type(const std::string& _name) {
-		name  = _name;
-		_path = MAP_DIR + _name;
+		name = _name;
 
-		if (! _check_file_exists(_path))
+		std::fstream name_file(MAP_NAME_DIR + name, std::ios::in);
+
+		if (name_file.fail())
 			return;
 
-		std::fstream map_file(_path, std::ios::in);
-
-		if (map_file.fail())
-			return;
-
-		// The format is <UID><separator>
+		// Parse the file into the vector "ids"
 		std::string chunk;
-		while (std::getline(map_file, chunk, MAP_SEPARATOR))
-			maps.emplace_back(chunk);
+		// The format is <UID><separator>
+		while (std::getline(name_file, chunk, MAP_SEPARATOR))
+			ids.emplace_back(chunk);
 
-		map_file.close();
+		name_file.close();
 	}
 
 	uid::uid_type map_type::create() {
-		return create_mapping(name);
-	}
+		std::fstream name_file(MAP_NAME_DIR + name,
+							   std::ios::out | std::ios::app);
 
-	bool map_type::remove(const uid::uid_type& mid) {
-		if (! exists(mid))
-			return false;
-
-		std::fstream map_file(_path, std::ios::in | std::ios::ate);
-
-		if (map_file.fail())
-			return false;
-
-		size_t map_size = map_file.tellg();
-		map_file.seekg(0, std::ios::beg);
-
-		std::string buf;
-		std::string chunk;
-		while (std::getline(map_file, chunk, MAP_SEPARATOR)) {
-			if (chunk == mid)
-				continue;
-
-			buf += chunk;
-			buf += MAP_SEPARATOR;
-		}
-
-		map_file.close();
-		map_file = std::fstream(_path, std::ios::out | std::ios::trunc);
-
-		map_file.write(buf.c_str(), buf.length());
-
-		return exists(mid);
-	}
-
-	uid::uid_type create_mapping(const std::string& name) {
-		std::fstream map_file(MAP_DIR + name, std::ios::out | std::ios::app);
-
-		if (map_file.fail())
+		// TODO: Some actual error handling here
+		if (name_file.fail())
 			return "";
 
 		auto id = uid::generator().get();
@@ -81,10 +45,81 @@ namespace map {
 		out += id;
 		out += MAP_SEPARATOR;
 
-		map_file.write(out.c_str(), out.length());
-		map_file.close();
+		name_file.write(out.c_str(), out.length());
+		name_file.close();
+
+		std::fstream id_file(MAP_ID_DIR + id, std::ios::out | std::ios::trunc);
+		id_file.write((name + MAP_SEPARATOR).c_str(),
+					  name.length() + MAP_SEPARATOR_LEN);
+		id_file.close();
+
+		// Add the id to our vector so it is synced up with the changes
+		ids.emplace_back(id);
 
 		return id;
+	}
+
+	bool map_type::remove(const uid::uid_type& mid) {
+		if (! exists(mid))
+			return false;
+
+		std::fstream name_file(MAP_NAME_DIR + name,
+							   std::ios::in | std::ios::ate);
+
+		// TODO: Some actual error handling here
+		if (name_file.fail())
+			return false;
+
+		// Simple way to get the size of the file
+		size_t map_size = name_file.tellg(); // get current pos, that's the size
+		name_file.seekg(0, std::ios::beg);	 // reset pos to the beginning
+
+		// Determines whether the file will be empty after we delete the given
+		// uid. We only set it to false if we find data that has to be written
+		// again
+		bool empty = true;
+
+		std::string buf;
+		std::string chunk;
+		while (std::getline(name_file, chunk, MAP_SEPARATOR)) {
+			if (chunk == mid)
+				continue;
+
+			empty = false;
+			buf += chunk;
+			buf += MAP_SEPARATOR;
+		}
+
+		name_file.close();
+
+		if (! empty) { // If we don't have data to write to it, just delete it
+			name_file = std::fstream(MAP_NAME_DIR + name,
+									 std::ios::out | std::ios::trunc);
+			name_file.write(buf.c_str(), buf.length());
+			name_file.close();
+		} else {
+			std::filesystem::remove(MAP_NAME_DIR + name);
+		}
+
+		// Remove the id file
+		std::filesystem::remove(MAP_ID_DIR + mid);
+
+		// Delete the id from the vector to sync it in order to reflect the
+		// changes in the filesystem without reopening and reparsing the file
+		for (size_t i = 0; i < ids.size(); i++)
+			if (ids[i] == mid)
+				ids.erase(ids.begin() + i);
+
+		return true;
+	}
+
+	map_type by_id(const uid::uid_type& _id) {
+		std::string	 _name;
+		std::fstream id_file(MAP_ID_DIR + _id, std::ios::in);
+		std::getline(id_file, _name, MAP_SEPARATOR);
+		id_file.close();
+
+		return map_type(_name);
 	}
 
 }; // namespace map

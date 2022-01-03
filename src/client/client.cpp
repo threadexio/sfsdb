@@ -24,15 +24,16 @@ static const resp::rcmd_t cmds[] = {{"_ERR", err}, {"OK", ok}};
 
 int main() {
 	/*
-	map::map_type m("test1");
+	auto m	 = map::by_name("test1");
 	auto id1 = m.create();
 
-	for (auto& a : m.maps) { std::cout << m.name << " -> " << a << "\n"; }
+	for (auto& a : m.ids) { std::cout << m.name << " -> " << a << "\n"; }
 
+	std::cout << "---------------------";
+	std::cin.get();
 	m.remove(id1);
-	std::cout << "---------------------\n";
 
-	for (auto& a : m.maps) { std::cout << m.name << " -> " << a << "\n"; }
+	for (auto& a : m.ids) { std::cout << m.name << " -> " << a << "\n"; }
 	*/
 
 	uid::generator uidgen;
