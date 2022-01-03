@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SCRIPT_LOC="$(dirname "$(type "$0" | awk '{print $NF}')")"
-cd "$SCRIPT_LOC"
+cd "$SCRIPT_LOC" || exit
 
 make CMFLAGS="-DBUILD_TESTS=ON"
 
