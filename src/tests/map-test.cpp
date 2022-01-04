@@ -5,6 +5,7 @@
 #include <string>
 
 #include "catch.hpp"
+#include "cfg.hpp"
 
 static bool fcontains(const std::string& fpath, const char* needle) {
 	std::string chunk;
@@ -20,15 +21,12 @@ static bool fcontains(const std::string& fpath, const char* needle) {
 	return false;
 }
 
-static auto mappath =
-	std::filesystem::temp_directory_path().string() + "/map-testing/";
-
 static const char* objname = "testobj";
 
 TEST_CASE("map tests", "[main]") {
 	// Prepare directory and cd there
-	std::filesystem::create_directory(mappath);
-	std::filesystem::current_path(mappath);
+	std::filesystem::create_directory(testpath);
+	std::filesystem::current_path(testpath);
 
 	map::init();
 
@@ -39,10 +37,10 @@ TEST_CASE("map tests", "[main]") {
 
 	SECTION("Test creation of objects", "[main]") {
 		REQUIRE(m.exists(id1));
-		REQUIRE(fcontains(mappath + MAP_ID_DIR + id1, objname));
+		REQUIRE(fcontains(testpath + MAP_ID_DIR + id1, objname));
 
 		REQUIRE(m.exists(id2));
-		REQUIRE(fcontains(mappath + MAP_ID_DIR + id2, objname));
+		REQUIRE(fcontains(testpath + MAP_ID_DIR + id2, objname));
 	};
 
 	SECTION("Test by_name()", "[main]") {
@@ -66,13 +64,13 @@ TEST_CASE("map tests", "[main]") {
 	SECTION("Test deletion of objects", "[main]") {
 		m.remove(id1);
 
-		REQUIRE(std::filesystem::exists(mappath + MAP_ID_DIR + id1) == false);
-		REQUIRE(fcontains(mappath + MAP_NAME_DIR + objname, id1.c_str()) ==
+		REQUIRE(std::filesystem::exists(testpath + MAP_ID_DIR + id1) == false);
+		REQUIRE(fcontains(testpath + MAP_NAME_DIR + objname, id1.c_str()) ==
 				false);
 
 		while (! m.ids.empty()) m.remove(m.ids[0]);
 
-		REQUIRE(std::filesystem::exists(mappath + MAP_NAME_DIR + objname) ==
+		REQUIRE(std::filesystem::exists(testpath + MAP_NAME_DIR + objname) ==
 				false);
 	}
 }
