@@ -6,6 +6,7 @@ set (TEST_TARGETS
 	uid-test
 	map-test
 	storage-test
+	volume-test
 )
 
 message(STATUS "Enabled tests")
