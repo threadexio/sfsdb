@@ -29,9 +29,11 @@ build: FORCE
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR)
 
-	@export CPPFLAGS="$(CXXFLAGS) -Wall -Wextra"
-
-	@cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMFLAGS) ..
+	@cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON \
+		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS) -Wall -Wextra" \
+		$(CMFLAGS) \
+		..
 
 	@make
 
