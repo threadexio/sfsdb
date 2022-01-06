@@ -1,5 +1,6 @@
 #include "storage.hpp"
 
+#include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -32,18 +33,21 @@ TEST_CASE("storage tests", "[main]") {
 	std::filesystem::create_directory(testpath);
 	std::filesystem::current_path(testpath);
 
-	storage::init();
+	if (auto r = storage::init())
+		LOG_ERROR(r.Err().msg)
 
-	auto obj = storage::data_type(dataname);
+	auto obj = storage::at(dataname);
 
 	SECTION("Test creation of data", "[main]") {
-		obj.save(data2, strlen(data2));
+		if (auto r = obj.save(data2, strlen(data2)))
+			LOG_ERROR(r.Err().msg)
 
 		REQUIRE(read_data(dataname) == data2);
 	}
 
 	SECTION("Test overwrite of data", "[main]") {
-		obj.save(data1, strlen(data1));
+		if (auto r = obj.save(data1, strlen(data1)))
+			LOG_ERROR(r.Err().msg)
 
 		REQUIRE(read_data(dataname) == data1);
 	}
@@ -58,13 +62,17 @@ TEST_CASE("storage tests", "[main]") {
 		// string, and then back to const char*.
 		stat((std::string(STOR_DATA_DIR) + dataname).c_str(), &stbuf);
 
-		auto _details = obj.details();
+		storage::meta _details;
+		if (auto r = obj.details())
+			LOG_ERROR(r.Err().msg)
+		else
+			_details = r.Ok();
 
-		REQUIRE(_details.size == stbuf.st_size);
-		REQUIRE(_details.atime == (stbuf.st_atim.tv_nsec / 1000 +
-								   stbuf.st_atim.tv_sec * 1000000));
-		REQUIRE(_details.mtime == (stbuf.st_mtim.tv_nsec / 1000 +
-								   stbuf.st_mtim.tv_sec * 1000000));
+		REQUIRE(_details.size == (uint64_t)stbuf.st_size);
+		REQUIRE(_details.atime == (stbuf.st_atim.tv_nsec / 1000ULL +
+								   stbuf.st_atim.tv_sec * 1000000ULL));
+		REQUIRE(_details.mtime == (stbuf.st_mtim.tv_nsec / 1000ULL +
+								   stbuf.st_mtim.tv_sec * 1000000ULL));
 	}
 
 	SECTION("Test deletion of data", "[main]") {

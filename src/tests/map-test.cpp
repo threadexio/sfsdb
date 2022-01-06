@@ -11,6 +11,10 @@ static bool fcontains(const std::string& fpath, const char* needle) {
 	std::string chunk;
 	chunk.resize(256);
 	std::fstream infile(fpath);
+
+	if (infile.fail())
+		return false;
+
 	while (! infile.eof()) {
 		infile.read(chunk.data(), 255);
 		if (chunk.find(needle) != std::string::npos) {
@@ -28,12 +32,22 @@ TEST_CASE("map tests", "[main]") {
 	std::filesystem::create_directory(testpath);
 	std::filesystem::current_path(testpath);
 
-	map::init();
+	if (auto r = map::init())
+		LOG_ERROR(r.Err().msg)
 
 	auto m = map::by_name(objname);
 
-	auto id1 = m.create();
-	auto id2 = m.create();
+	uid::uid_type id1;
+	if (auto r = m.create())
+		LOG_ERROR(r.Err().msg)
+	else
+		id1 = r.Ok();
+
+	uid::uid_type id2;
+	if (auto r = m.create())
+		LOG_ERROR(r.Err().msg)
+	else
+		id2 = r.Ok();
 
 	SECTION("Test creation of objects", "[main]") {
 		REQUIRE(m.exists(id1));
@@ -53,7 +67,12 @@ TEST_CASE("map tests", "[main]") {
 	}
 
 	SECTION("Test by_id()", "[main]") {
-		auto s = map::by_id(id1);
+		map::map_type s;
+
+		if (auto r = map::by_id(id1))
+			LOG_ERROR(r.Err().msg)
+		else
+			s = r.Ok();
 
 		REQUIRE(s.name == m.name);
 		for (size_t i = 0; i < m.ids.size(); i++) {
@@ -62,13 +81,16 @@ TEST_CASE("map tests", "[main]") {
 	}
 
 	SECTION("Test deletion of objects", "[main]") {
-		m.remove(id1);
+		if (auto r = m.remove(id1))
+			LOG_ERROR(r.Err().msg)
 
 		REQUIRE(std::filesystem::exists(testpath + MAP_ID_DIR + id1) == false);
 		REQUIRE(fcontains(testpath + MAP_NAME_DIR + objname, id1.c_str()) ==
 				false);
 
-		while (! m.ids.empty()) m.remove(m.ids[0]);
+		while (! m.ids.empty())
+			if (auto r = m.remove(m.ids[0]))
+				LOG_ERROR(r.Err().msg)
 
 		REQUIRE(std::filesystem::exists(testpath + MAP_NAME_DIR + objname) ==
 				false);

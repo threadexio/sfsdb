@@ -8,17 +8,22 @@ extern "C" {
 #include <fstream>
 #include <string>
 
+#include "common.hpp"
+
 #define STOR_DATA_DIR "data/"
 
 namespace storage {
-
 	struct meta {
 		// Last access time (microseconds)
-		uint64_t atime = 0;
+		uint64_t atime;
 		// Last modification time (microseconds)
-		uint64_t mtime = 0;
+		uint64_t mtime;
 		// Size of file
-		uint64_t size = 0;
+		uint64_t size;
+
+		// Only for use with Result
+		meta() {
+		}
 
 		meta(const struct stat& _stat);
 	};
@@ -27,16 +32,24 @@ namespace storage {
 	 * @brief Create directory structure @ cwd.
 	 *
 	 */
-	inline void init() {
-		std::filesystem::create_directory(STOR_DATA_DIR);
+	inline Result<void*, Error> init() {
+		Result<void*, Error> ret;
+		try {
+			std::filesystem::create_directory(STOR_DATA_DIR);
+			return ret.Ok(nullptr);
+		} catch (const std::filesystem::filesystem_error& e) {
+			return ret.Err(e.code().value());
+		}
 	}
 
 	struct data_type {
 	private:
-		std::string	 dname;
-		std::fstream stream;
+		std::string dname;
 
 	public:
+		// Only for Result
+		data_type() {};
+
 		/**
 		 * @brief Open or create a new data object at _dname.
 		 *
@@ -44,38 +57,46 @@ namespace storage {
 		 */
 		data_type(const std::string& _dname);
 
-		~data_type();
-
 		/**
 		 * @brief Save data in the object. Will overwrite previous data!
 		 *
 		 * @param buf Buffer containing the data
 		 * @param len Length of the data
 		 */
-		void save(const char* const buf, size_t len);
+		Result<void*, Error> save(const char* const buf, size_t len);
 
 		/**
 		 * @brief Remove the current data.
 		 *
 		 */
-		inline void remove() {
-			stream.close();
-			std::filesystem::remove(STOR_DATA_DIR + dname);
+		inline Result<void*, Error> remove() {
+			Result<void*, Error> ret;
+			try {
+				std::filesystem::remove(STOR_DATA_DIR + dname);
+				return ret.Ok(nullptr);
+			} catch (const std::filesystem::filesystem_error& e) {
+				return ret.Err(e.code().value());
+			}
 		}
 
-		inline meta details() {
+		inline Result<meta, Error> details() {
+			Result<meta, Error> ret;
+
 			struct stat stbuf;
-			stat((STOR_DATA_DIR + dname).c_str(), &stbuf);
-			return stbuf;
+			if (stat((STOR_DATA_DIR + dname).c_str(), &stbuf) < 0)
+				return ret.Err(errno);
+
+			return ret.Ok(stbuf);
 		}
 
 		/**
-		 * @brief Get a reference to the data stream.
+		 * @brief Get a the file data stream.
 		 *
-		 * @return std::fstream&
+		 * @return std::fstream
 		 */
-		inline std::fstream& get() {
-			return stream;
+		inline std::fstream get() {
+			return std::fstream(STOR_DATA_DIR + dname,
+								std::ios::in | std::ios::binary);
 		}
 	};
 

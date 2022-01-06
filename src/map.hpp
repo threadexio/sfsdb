@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 
+#include "common.hpp"
 #include "uid.hpp"
 
 #define MAP_DIR		 "map/"
@@ -28,6 +29,8 @@ namespace map {
 		std::string				   name;
 		std::vector<uid::uid_type> ids;
 
+		map_type() = default;
+
 		map_type(const std::string& _name);
 
 		/**
@@ -36,7 +39,7 @@ namespace map {
 		 *
 		 * @return uid::uid_type - ID of the new mapping
 		 */
-		uid::uid_type create();
+		Result<uid::uid_type, Error> create();
 
 		/**
 		 * @brief Remove a mapping.
@@ -46,7 +49,7 @@ namespace map {
 		 * @return true - When the mapping was successfully deleted
 		 * @return false - When there was an error
 		 */
-		bool remove(const uid::uid_type& mid);
+		Result<void*, Error> remove(const uid::uid_type& mid);
 
 		/**
 		 * @brief Check if a mapping exists.
@@ -79,11 +82,11 @@ namespace map {
 	 * @param _id
 	 * @return map_type
 	 */
-	map_type by_id(const uid::uid_type& _id);
+	Result<map_type, Error> by_id(const uid::uid_type& _id);
 
 	/**
 	 * @brief Create the directory structure @ cwd.
 	 *
 	 */
-	void init();
+	Result<void*, Error> init();
 }; // namespace map

@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 
+#include "common.hpp"
 #include "uid.hpp"
 
 namespace map {
@@ -26,13 +27,15 @@ namespace map {
 		name_file.close();
 	}
 
-	uid::uid_type map_type::create() {
+	Result<uid::uid_type, Error> map_type::create() {
+		Result<uid::uid_type, Error> ret;
+
 		std::fstream name_file(MAP_NAME_DIR + name,
 							   std::ios::out | std::ios::app);
 
 		// TODO: Some actual error handling here
 		if (name_file.fail())
-			return "";
+			return ret.Err(errno);
 
 		auto id = uid::generator().get();
 
@@ -55,23 +58,20 @@ namespace map {
 		// Add the id to our vector so it is synced up with the changes
 		ids.emplace_back(id);
 
-		return id;
+		return ret.Ok(id);
 	}
 
-	bool map_type::remove(const uid::uid_type& mid) {
+	Result<void*, Error> map_type::remove(const uid::uid_type& mid) {
+		Result<void*, Error> ret;
+
 		if (! exists(mid))
-			return false;
+			return ret.Err(ENOENT); // No such file or directory, interpret this
+									// as "mid does not exist"
 
-		std::fstream name_file(MAP_NAME_DIR + name,
-							   std::ios::in | std::ios::ate);
+		std::fstream name_file(MAP_NAME_DIR + name, std::ios::in);
 
-		// TODO: Some actual error handling here
 		if (name_file.fail())
-			return false;
-
-		// Simple way to get the size of the file
-		size_t map_size = name_file.tellg(); // get current pos, that's the size
-		name_file.seekg(0, std::ios::beg);	 // reset pos to the beginning
+			return ret.Err(errno);
 
 		// Determines whether the file will be empty after we delete the given
 		// uid. We only set it to false if we find data that has to be written
@@ -109,22 +109,33 @@ namespace map {
 			if (ids[i] == mid)
 				ids.erase(ids.begin() + i);
 
-		return true;
+		return ret.Ok(nullptr);
 	}
 
-	map_type by_id(const uid::uid_type& _id) {
+	Result<map_type, Error> by_id(const uid::uid_type& _id) {
+		Result<map_type, Error> ret;
+
 		std::string	 _name;
 		std::fstream id_file(MAP_ID_DIR + _id, std::ios::in);
+		if (id_file.fail())
+			return ret.Err(errno);
+
 		std::getline(id_file, _name, MAP_SEPARATOR);
 		id_file.close();
 
-		return map_type(_name);
+		return ret.Ok(_name);
 	}
 
-	void init() {
-		std::filesystem::create_directories(MAP_DIR);
-		std::filesystem::create_directory(MAP_ID_DIR);
-		std::filesystem::create_directory(MAP_NAME_DIR);
+	Result<void*, Error> init() {
+		Result<void*, Error> ret;
+		try {
+			std::filesystem::create_directories(MAP_DIR);
+			std::filesystem::create_directory(MAP_ID_DIR);
+			std::filesystem::create_directory(MAP_NAME_DIR);
+			return ret.Ok(nullptr);
+		} catch (const std::filesystem::filesystem_error& e) {
+			return ret.Err(e.code().value());
+		}
 	}
 
 }; // namespace map
