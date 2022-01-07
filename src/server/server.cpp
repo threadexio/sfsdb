@@ -4,12 +4,12 @@
 
 #include <iostream>
 
+#include "log.hpp"
 #include "resp/resp.hpp"
 
-nio::error			e;
-nio::ip::v4::server srv(e, nio::ip::v4::addr("127.0.0.1", 8888));
+nio::ip::v4::server srv(nio::ip::v4::addr("127.0.0.1", 8888));
 
-static void exit_handler(int sig) {
+static void exit_handler(int) {
 	srv.shutdown();
 	std::cout << "\rExiting...\n";
 	exit(1);
@@ -23,7 +23,7 @@ static int get(char* data) {
 	return 0;
 }
 
-static int invalid(char* data) {
+static int invalid(char*) {
 	std::cout << "invalid command\n";
 	return 1;
 }
@@ -38,30 +38,47 @@ int main() {
 	int enable = 1;
 	setsockopt(srv.raw(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
+	if (auto r = srv.Bind()) {
+		plog::v(LOG_ERROR "net", r.Err().msg);
+		srv.shutdown();
+		exit(r.Err().no);
+	}
+
+	if (auto r = srv.Listen()) {
+		plog::v(LOG_ERROR "net", r.Err().msg);
+		srv.shutdown();
+		exit(r.Err().no);
+	}
+
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
 
 	resp::parser parser(cmds);
 
-	std::cout << "bind(): " << srv.Bind().msg << "\n";
-
-	std::cout << "listen(): " << srv.Listen().msg << "\n";
-
 	for (;;) {
-		auto stream = srv.Accept(e);
-		if (e) {
-			std::cout << "accept(): " << e.err << ":" << e.msg << "\n";
-			srv.shutdown();
-			return 1;
-		}
+		nio::ip::v4::stream stream;
+		if (auto r = srv.Accept()) {
+			plog::v(LOG_ERROR "net", r.Err().msg);
+			stream.shutdown();
+			continue;
+		} else
+			stream = r.Ok();
 
-		// Print peer info
-		std::cout << "Connected: " << stream.peer().ip() << ":"
-				  << stream.peer().port() << "\n";
+		plog::v(LOG_INFO "net",
+				std::string("Connected: " + stream.peer().ip() + ":" +
+							std::to_string(stream.peer().port()))
+					.c_str());
 
 		// Read and parse a command
-		nio::buffer data   = stream.read(e, 256);
-		auto		result = parser.parse(data);
+		nio::buffer data;
+		if (auto r = stream.read(256)) {
+			plog::v(LOG_WARNING "net", r.Err().msg);
+			stream.shutdown();
+			continue;
+		} else
+			data = r.Ok();
+
+		auto result = parser.parse(data);
 
 		// We need another pointer here because it is going to be changed by
 		// serialize()
@@ -75,7 +92,11 @@ int main() {
 			resp::types::simstr("OK").serialize(head);
 		}
 
-		stream.write(e, data, strlen(data));
+		if (auto r = stream.write(data, strlen(data))) {
+			plog::v(LOG_WARNING "net", r.Err().msg);
+			stream.shutdown();
+			continue;
+		}
 
 		stream.shutdown();
 	}

@@ -23,8 +23,8 @@
 #define LOG_COLOR_BOLD_CYAN	  "\e[1;36m"
 #define LOG_COLOR_BOLD_WHITE  "\e[1;37m"
 
-#define LOG_INFO	LOG_COLOR_CYAN
-#define LOG_NOTICE	LOG_COLOR_BOLD_WHITE
+#define LOG_INFO	LOG_COLOR_BOLD_WHITE
+#define LOG_NOTICE	LOG_COLOR_CYAN
 #define LOG_WARNING LOG_COLOR_YELLOW
 #define LOG_ERROR	LOG_COLOR_BOLD_RED
 
@@ -44,6 +44,6 @@ namespace plog {
 		tm* timezone = localtime(&rawtime);
 		strftime(datebuf, sizeof(datebuf), "%b %d %X", timezone);
 
-		fprintf(stderr, "%s [%s]: %s" LOG_COLOR_RESET "\n", datebuf, _id, _msg);
+		fprintf(stderr, "%s %s: %s" LOG_COLOR_RESET "\n", datebuf, _id, _msg);
 	}
 } // namespace plog
