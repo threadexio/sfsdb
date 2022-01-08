@@ -7,24 +7,25 @@
 #include "log.hpp"
 #include "resp/resp.hpp"
 
-nio::ip::v4::server srv(nio::ip::v4::addr("127.0.0.1", 8888));
-
-static void exit_handler(int) {
-	srv.shutdown();
-	std::cout << "\rExiting...\n";
-	exit(1);
+static void exit_handler(int sig) {
+	plog::v(LOG_INFO "handler", "Exit signal detected. Exiting...");
+	exit(sig);
 }
 
 static int get(char* data) {
 	// resp::types::integer len(data);
 	resp::types::bulkstr uid = data;
 
-	std::cout << "Uid: " << uid.value << "\n";
+	// std::cout << "Uid: " << uid.value << "\n";
+	plog::v(LOG_INFO "parser",
+			"get: uid = " + std::string(uid.value, uid.length));
 	return 0;
 }
 
-static int invalid(char*) {
-	std::cout << "invalid command\n";
+static int invalid(char* data) {
+	// std::cout << "invalid command\n";
+	plog::v(LOG_WARNING "parser",
+			"Invalid command. Dump: " + std::string(data));
 	return 1;
 }
 
@@ -35,18 +36,25 @@ _INV is the callback for invalid commands (not needed on the client)
 */
 
 int main() {
+	nio::ip::v4::server srv(nio::ip::v4::addr("127.0.0.1", 8888));
+
+	if (auto r = srv.Create()) {
+		plog::v(LOG_ERROR "net",
+				"Cannot create socket: " + std::string(r.Err().msg));
+		exit(r.Err().no);
+	}
+
 	int enable = 1;
 	setsockopt(srv.raw(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
 	if (auto r = srv.Bind()) {
-		plog::v(LOG_ERROR "net", r.Err().msg);
-		srv.shutdown();
+		plog::v(LOG_ERROR "net", std::string(r.Err().msg));
 		exit(r.Err().no);
 	}
 
 	if (auto r = srv.Listen()) {
-		plog::v(LOG_ERROR "net", r.Err().msg);
-		srv.shutdown();
+		plog::v(LOG_ERROR "net",
+				"Cannot listen on socket: " + std::string(r.Err().msg));
 		exit(r.Err().no);
 	}
 
@@ -58,21 +66,21 @@ int main() {
 	for (;;) {
 		nio::ip::v4::stream stream;
 		if (auto r = srv.Accept()) {
-			plog::v(LOG_ERROR "net", r.Err().msg);
+			plog::v(LOG_WARNING "net",
+					"Cannot accept: " + std::string(r.Err().msg));
 			continue;
 		} else
 			stream = std::move(r.Ok());
 
 		plog::v(LOG_INFO "net",
-				std::string("Connected: " + stream.peer().ip() + ":" +
-							std::to_string(stream.peer().port()))
-					.c_str());
+				"Connected: " + stream.peer().ip() + ":" +
+					std::to_string(stream.peer().port()));
 
 		// Read and parse a command
 		nio::buffer data;
 		if (auto r = stream.read(256)) {
-			plog::v(LOG_WARNING "net", r.Err().msg);
-			stream.shutdown();
+			plog::v(LOG_WARNING "net",
+					"Cannot read: " + std::string(r.Err().msg));
 			continue;
 		} else
 			data = r.Ok();
@@ -92,12 +100,10 @@ int main() {
 		}
 
 		if (auto r = stream.write(data, strlen(data))) {
-			plog::v(LOG_WARNING "net", r.Err().msg);
-			stream.shutdown();
+			plog::v(LOG_WARNING "net",
+					"Cannot send: " + std::string(r.Err().msg));
 			continue;
 		}
-
-		stream.shutdown();
 	}
 
 	return 0;

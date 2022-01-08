@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <ctime>
+#include <string>
 
 // source: https://gist.github.com/JBlond/2fea43a3049b38287e5e9cefc87b2124
 #define LOG_COLOR_BLACK	 "\e[0;30m"
@@ -36,7 +37,7 @@ namespace plog {
 	 * @param _id Id of the caller
 	 * @param _msg Message to log
 	 */
-	void v(const char* _id, const char* _msg) {
+	void v(const std::string& _id, const std::string& _msg) {
 		// Time information
 		char   datebuf[64];
 		time_t rawtime;
@@ -44,6 +45,10 @@ namespace plog {
 		tm* timezone = localtime(&rawtime);
 		strftime(datebuf, sizeof(datebuf), "%b %d %X", timezone);
 
-		fprintf(stderr, "%s %s: %s" LOG_COLOR_RESET "\n", datebuf, _id, _msg);
+		fprintf(stderr,
+				"%s %s: %s" LOG_COLOR_RESET "\n",
+				datebuf,
+				_id.c_str(),
+				_msg.c_str());
 	}
 } // namespace plog
