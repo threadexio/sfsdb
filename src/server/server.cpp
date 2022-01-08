@@ -6,26 +6,77 @@
 
 #include "log.hpp"
 #include "resp/resp.hpp"
+#include "volume.hpp"
 
 static void exit_handler(int sig) {
 	plog::v(LOG_INFO "handler", "Exit signal detected. Exiting...");
 	exit(sig);
 }
 
-static int get(char* data) {
-	// resp::types::integer len(data);
-	resp::types::bulkstr uid = data;
+static volume::volume_type vol;
 
-	// std::cout << "Uid: " << uid.value << "\n";
-	plog::v(LOG_INFO "parser",
-			"get: uid = " + std::string(uid.value, uid.length));
-	return 0;
+// TODO: Improve the resp parser, like a lot.
+
+//	Stuff to improve:
+//	=================
+//	1. Don't SEGV on a weird request
+//	2. Make a better interface
+//	3. Make a resizeable container (or reuse std::vector)
+
+/**
+ * @brief Get a file by ID
+ *
+ * @param data
+ * @return int
+ */
+static int get(char* data, void* _stream) {
+	auto* stream = (nio::ip::v4::stream*)_stream;
+
+	resp::types::bulkstr fid = data;
+
+	plog::v(LOG_INFO "parser", "Getting file: " + std::string(fid.value));
+
+	nio::buffer buf(512);
+	if (auto r = vol.get_id(fid.value)) {
+		plog::v(LOG_WARNING "volume",
+				"Cannot get file " + std::string(fid.value) + ": " +
+					std::string(r.Err().msg));
+
+		{
+			char* head = buf;
+			resp::types::error(r.Err().msg).serialize(head);
+		}
+		stream->write(buf);
+
+		return r.Err().no;
+	} else {
+		auto fobj = r.Ok();
+		auto fs	  = fobj.get();
+
+		if (auto r1 = fobj.details()) {
+			plog::v(LOG_ERROR "parser",
+					"Cannot stat file: " + std::string(fid.value));
+
+			{
+				char* head = buf;
+				resp::types::error(r.Err().msg).serialize(head);
+			}
+			stream->write(buf);
+			return r.Err().no;
+		} else {
+			buf.resize(r1.Ok().size + 1);
+			buf.at(r1.Ok().size) = 0;
+			char* head			 = buf;
+			fs.read(buf, r1.Ok().size);
+			resp::types::bulkstr(buf).serialize(head);
+			stream->write(buf);
+			return 0;
+		}
+	}
 }
 
-static int invalid(char* data) {
-	// std::cout << "invalid command\n";
-	plog::v(LOG_WARNING "parser",
-			"Invalid command. Dump: " + std::string(data));
+static int invalid(char*, void*) {
+	plog::v(LOG_WARNING "parser", "Invalid command.");
 	return 1;
 }
 
@@ -36,6 +87,27 @@ _INV is the callback for invalid commands (not needed on the client)
 */
 
 int main() {
+	// Register signal handlers for graceful exits
+	signal(SIGINT, exit_handler);
+	signal(SIGTERM, exit_handler);
+
+	// Setup resp parser
+	resp::parser parser(cmds);
+
+	// Setup the volume
+	if (auto r = volume::init("/tmp/testvol")) {
+		plog::v(LOG_ERROR "volume",
+				"Cannot initialize volume: " + std::string(r.Err().msg));
+		exit(r.Err().no);
+	} else
+		vol = r.Ok();
+
+	// Add a test file
+	vol.store("test file",
+			  "this is some random test data",
+			  strlen("this is some random test data"));
+
+	// Setup network stuff
 	nio::ip::v4::server srv(nio::ip::v4::addr("127.0.0.1", 8888));
 
 	if (auto r = srv.Create()) {
@@ -58,11 +130,7 @@ int main() {
 		exit(r.Err().no);
 	}
 
-	signal(SIGINT, exit_handler);
-	signal(SIGTERM, exit_handler);
-
-	resp::parser parser(cmds);
-
+	// Main loop
 	for (;;) {
 		nio::ip::v4::stream stream;
 		if (auto r = srv.Accept()) {
@@ -70,7 +138,7 @@ int main() {
 					"Cannot accept: " + std::string(r.Err().msg));
 			continue;
 		} else
-			stream = std::move(r.Ok());
+			stream = r.Ok();
 
 		plog::v(LOG_INFO "net",
 				"Connected: " + stream.peer().ip() + ":" +
@@ -85,26 +153,9 @@ int main() {
 		} else
 			data = r.Ok();
 
-		auto result = parser.parse(data);
+		auto result = parser.parse(data, &stream);
 
-		// We need another pointer here because it is going to be changed by
-		// serialize()
-		char* head = data;
-
-		// Do all of the data processing inside the callbacks and respond from
-		// here
-		if (result % 2) {
-			resp::types::error("Some error message").serialize(head);
-		} else {
-			resp::types::simstr("OK").serialize(head);
-		}
-
-		if (auto r = stream.write(data, strlen(data))) {
-			plog::v(LOG_WARNING "net",
-					"Cannot send: " + std::string(r.Err().msg));
-			continue;
-		}
+		plog::v(LOG_INFO "parser", "parse result: " + std::to_string(result));
 	}
-
 	return 0;
 }

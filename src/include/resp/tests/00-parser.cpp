@@ -7,22 +7,22 @@
 #include "resp/resp.hpp"
 #include "resp/types.hpp"
 
-static int c1(char* data) {
+static int c1(char* data, void*) {
 	return resp::types::integer(data).value;
 }
 
-static int c2(char* data) {
+static int c2(char* data, void*) {
 	return strcmp(resp::types::bulkstr(data).value,
 				  "this is the\r\n expected string\nwith many newlines");
 }
 
-static int error(char* data) {
+static int error(char* data, void*) {
 	auto err  = resp::types::error(data);
 	auto code = resp::types::integer(data);
 	return -code.value;
 }
 
-static int invalid(char* data) {
+static int invalid(char*, void*) {
 	return 0;
 }
 
@@ -39,7 +39,7 @@ TEST_CASE("resp::parser tests", "[resp]") {
 		resp::types::simstr("C1").serialize(head);
 		resp::types::integer(-234235).serialize(head);
 
-		auto result = parser.parse(tmp);
+		auto result = parser.parse(tmp, nullptr);
 		REQUIRE(result == -234235);
 	}
 
@@ -52,7 +52,7 @@ TEST_CASE("resp::parser tests", "[resp]") {
 			"this is the\r\n expected string\nwith many newlines")
 			.serialize(head);
 
-		auto result = parser.parse(tmp);
+		auto result = parser.parse(tmp, nullptr);
 		REQUIRE(result == 0);
 	}
 
@@ -63,7 +63,7 @@ TEST_CASE("resp::parser tests", "[resp]") {
 		resp::types::error("Some error message").serialize(head);
 		resp::types::integer(64).serialize(head);
 
-		auto result = parser.parse(tmp);
+		auto result = parser.parse(tmp, nullptr);
 		REQUIRE(result == -64);
 	}
 
@@ -74,7 +74,7 @@ TEST_CASE("resp::parser tests", "[resp]") {
 		resp::types::simstr("Some other command").serialize(head);
 		resp::types::bulkstr("this wont be\n\rprocessed").serialize(head);
 
-		auto result = parser.parse(tmp);
+		auto result = parser.parse(tmp, nullptr);
 		REQUIRE(result == 0);
 	}
 }

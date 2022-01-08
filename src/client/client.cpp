@@ -6,7 +6,7 @@
 #include "resp/resp.hpp"
 #include "uid.hpp"
 
-static int err(char* data) {
+static int err(char* data, void*) {
 	resp::types::error err(data);
 
 	std::cout << "Error: " << err.value << "\n";
@@ -14,7 +14,7 @@ static int err(char* data) {
 	return 1;
 }
 
-static int ok(char*) {
+static int ok(char*, void*) {
 	plog::v(LOG_INFO "parser", "Everything is ok");
 	return 0;
 }
@@ -61,7 +61,7 @@ int main() {
 	} else
 		buf = r.Ok();
 
-	auto result = parser.parse(buf);
+	auto result = parser.parse(buf, &stream);
 
 	plog::v(LOG_INFO "net", "Parser: " + std::to_string(result));
 

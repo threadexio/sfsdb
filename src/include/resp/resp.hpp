@@ -7,7 +7,7 @@
 
 namespace resp {
 	// Callback type
-	using cb_t = int (*)(char* data);
+	using cb_t = int (*)(char* data, void*);
 
 	// Key-value struct used for mapping handlers to resp commands
 	struct rcmd_t {
@@ -51,7 +51,7 @@ namespace resp {
 		 * @param data Pointer to the data to parse
 		 * @return status - Handler error code
 		 */
-		int parse(char* data);
+		int parse(char* data, void* arg);
 
 	private:
 		cb_t cb_inv = NULL;
