@@ -59,10 +59,9 @@ int main() {
 		nio::ip::v4::stream stream;
 		if (auto r = srv.Accept()) {
 			plog::v(LOG_ERROR "net", r.Err().msg);
-			stream.shutdown();
 			continue;
 		} else
-			stream = r.Ok();
+			stream = std::move(r.Ok());
 
 		plog::v(LOG_INFO "net",
 				std::string("Connected: " + stream.peer().ip() + ":" +

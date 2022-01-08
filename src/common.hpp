@@ -1,9 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cstring>
 
 /**
- * @brief Simple type for error handling in return values. ("Inspired" by Rust)
+ * @brief Simple type for error handling in return values. ("Inspired" by
+ * Rust)
  *
  * @tparam _T Type of the value
  * @tparam _E Type of the error
@@ -19,23 +21,23 @@ private:
 public:
 	Result() {};
 
-	[[nodiscard]] inline _T& Ok() {
-		return ok;
+	[[nodiscard]] inline _T&& Ok() {
+		return std::move(ok);
 	}
 
-	[[nodiscard]] inline _E& Err() {
-		return err;
+	[[nodiscard]] inline _E&& Err() {
+		return std::move(err);
 	}
 
-	[[nodiscard]] inline Result<_T, _E>& Ok(const _T& _ok) {
+	[[nodiscard]] inline Result<_T, _E>& Ok(_T&& _ok) {
 		_fail = false;
-		ok	  = _ok;
+		ok	  = std::move(_ok);
 		return *this;
 	}
 
-	[[nodiscard]] inline Result<_T, _E>& Err(const _E& _err) {
+	[[nodiscard]] inline Result<_T, _E>& Err(_E&& _err) {
 		_fail = true;
-		err	  = _err;
+		err	  = std::move(_err);
 		return *this;
 	}
 
@@ -56,9 +58,23 @@ struct Error {
 	int			no;
 	const char* msg;
 
-	Error() = default;
+	Error() {};
 
 	Error(int _errno) : no(_errno), msg(strerror(no)) {
+	}
+
+	Error(Error&& other) noexcept {
+		no	= other.no;
+		msg = other.msg;
+	}
+
+	Error& operator=(Error&& other) noexcept {
+		if (this == &other)
+			return *this;
+
+		no	= other.no;
+		msg = other.msg;
+		return *this;
 	}
 
 	inline operator bool() {

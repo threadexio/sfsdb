@@ -30,10 +30,10 @@ int main() {
 
 	if (auto r = cli.Connect()) {
 		plog::v(LOG_ERROR "net", r.Err().msg);
-		stream.shutdown();
+		// stream.shutdown();
 		exit(r.Err().no);
 	} else
-		stream = r.Ok();
+		stream = std::move(r.Ok());
 
 	// Prepare our command
 	nio::buffer buf(256);
@@ -46,14 +46,14 @@ int main() {
 	// Send our command
 	if (auto r = stream.write(buf, strlen(buf))) {
 		plog::v(LOG_WARNING "net", r.Err().msg);
-		stream.shutdown();
+		// stream.shutdown();
 		exit(r.Err().no);
 	}
 
 	// Read and parse the response
 	if (auto r = stream.read(256)) {
 		plog::v(LOG_WARNING "net", r.Err().msg);
-		stream.shutdown();
+		// stream.shutdown();
 		exit(r.Err().no);
 	} else
 		buf = r.Ok();

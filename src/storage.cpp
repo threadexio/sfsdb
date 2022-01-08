@@ -31,15 +31,15 @@ namespace storage {
 		std::fstream stream(STOR_DATA_DIR + dname,
 							std::ios::out | std::ios::trunc | std::ios::binary);
 		if (stream.fail())
-			return ret.Err(errno);
+			return std::move(ret.Err(errno));
 
 		stream.write(buf, len);
 		stream.close();
 
 		stream.open(STOR_DATA_DIR + dname, std::ios::in);
 		if (stream.fail())
-			return ret.Err(errno);
+			return std::move(ret.Err(errno));
 
-		return ret.Ok(nullptr);
+		return std::move(ret.Ok(nullptr));
 	}
 }; // namespace storage

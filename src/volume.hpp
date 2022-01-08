@@ -36,14 +36,14 @@ namespace volume {
 
 			uid::uid_type id = "";
 			if (auto r = map::by_name(_name).create())
-				return ret.Err(r.Err());
+				return std::move(ret.Err(r.Err()));
 			else
 				id = r.Ok();
 
 			if (auto r = storage::at(id).save(_data, _len))
-				return ret.Err(r.Err());
+				return std::move(ret.Err(r.Err()));
 
-			return ret.Ok(id);
+			return std::move(ret.Ok(std::move(id)));
 		}
 
 		/**
@@ -58,16 +58,16 @@ namespace volume {
 
 			// Nested error checking, this is the way
 			if (auto r = map::by_id(_id))
-				return ret.Err(r.Err());
+				return std::move(ret.Err(r.Err()));
 			else {
 				if (auto r1 = r.Ok().remove(_id))
-					return ret.Err(r1.Err());
+					return std::move(ret.Err(r1.Err()));
 			}
 
 			if (auto r = storage::at(_id).remove())
-				return ret.Err(r.Err());
+				return std::move(ret.Err(r.Err()));
 
-			return ret.Ok(nullptr);
+			return std::move(ret.Ok(nullptr));
 		}
 
 		/**
@@ -91,9 +91,9 @@ namespace volume {
 			Result<storage::data_type, Error> ret;
 
 			if (auto r = map::by_id(_id))
-				return ret.Err(r.Err());
+				return std::move(ret.Err(r.Err()));
 			else
-				return ret.Ok(storage::at(_id));
+				return std::move(ret.Ok(storage::at(_id)));
 		}
 	};
 
@@ -108,15 +108,15 @@ namespace volume {
 			std::filesystem::create_directory(root);
 			std::filesystem::current_path(root);
 		} catch (const std::filesystem::filesystem_error& e) {
-			return ret.Err(e.code().value());
+			return std::move(ret.Err(e.code().value()));
 		}
 
 		if (auto r = map::init())
-			return ret.Err(r.Err());
+			return std::move(ret.Err(r.Err()));
 
 		if (auto r = storage::init())
-			return ret.Err(r.Err());
+			return std::move(ret.Err(r.Err()));
 
-		return ret.Ok(volume_type(root));
+		return std::move(ret.Ok(volume_type(root)));
 	}
 } // namespace volume

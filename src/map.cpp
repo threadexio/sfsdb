@@ -35,7 +35,7 @@ namespace map {
 
 		// TODO: Some actual error handling here
 		if (name_file.fail())
-			return ret.Err(errno);
+			return std::move(ret.Err(errno));
 
 		auto id = uid::generator().get();
 
@@ -58,20 +58,21 @@ namespace map {
 		// Add the id to our vector so it is synced up with the changes
 		ids.emplace_back(id);
 
-		return ret.Ok(id);
+		return std::move(ret.Ok(std::move(id)));
 	}
 
 	Result<void*, Error> map_type::remove(const uid::uid_type& mid) {
 		Result<void*, Error> ret;
 
 		if (! exists(mid))
-			return ret.Err(ENOENT); // No such file or directory, interpret this
-									// as "mid does not exist"
+			return std::move(
+				ret.Err(ENOENT)); // No such file or directory, interpret this
+								  // as "mid does not exist"
 
 		std::fstream name_file(MAP_NAME_DIR + name, std::ios::in);
 
 		if (name_file.fail())
-			return ret.Err(errno);
+			return std::move(ret.Err(errno));
 
 		// Determines whether the file will be empty after we delete the given
 		// uid. We only set it to false if we find data that has to be written
@@ -109,7 +110,7 @@ namespace map {
 			if (ids[i] == mid)
 				ids.erase(ids.begin() + i);
 
-		return ret.Ok(nullptr);
+		return std::move(ret.Ok(nullptr));
 	}
 
 	Result<map_type, Error> by_id(const uid::uid_type& _id) {
@@ -118,12 +119,12 @@ namespace map {
 		std::string	 _name;
 		std::fstream id_file(MAP_ID_DIR + _id, std::ios::in);
 		if (id_file.fail())
-			return ret.Err(errno);
+			return std::move(ret.Err(errno));
 
 		std::getline(id_file, _name, MAP_SEPARATOR);
 		id_file.close();
 
-		return ret.Ok(_name);
+		return std::move(ret.Ok(std::move(_name)));
 	}
 
 	Result<void*, Error> init() {
@@ -132,9 +133,9 @@ namespace map {
 			std::filesystem::create_directories(MAP_DIR);
 			std::filesystem::create_directory(MAP_ID_DIR);
 			std::filesystem::create_directory(MAP_NAME_DIR);
-			return ret.Ok(nullptr);
+			return std::move(ret.Ok(nullptr));
 		} catch (const std::filesystem::filesystem_error& e) {
-			return ret.Err(e.code().value());
+			return std::move(ret.Err(e.code().value()));
 		}
 	}
 

@@ -36,9 +36,9 @@ namespace storage {
 		Result<void*, Error> ret;
 		try {
 			std::filesystem::create_directory(STOR_DATA_DIR);
-			return ret.Ok(nullptr);
+			return std::move(ret.Ok(nullptr));
 		} catch (const std::filesystem::filesystem_error& e) {
-			return ret.Err(e.code().value());
+			return std::move(ret.Err(e.code().value()));
 		}
 	}
 
@@ -73,9 +73,9 @@ namespace storage {
 			Result<void*, Error> ret;
 			try {
 				std::filesystem::remove(STOR_DATA_DIR + dname);
-				return ret.Ok(nullptr);
+				return std::move(ret.Ok(nullptr));
 			} catch (const std::filesystem::filesystem_error& e) {
-				return ret.Err(e.code().value());
+				return std::move(ret.Err(e.code().value()));
 			}
 		}
 
@@ -84,9 +84,9 @@ namespace storage {
 
 			struct stat stbuf;
 			if (stat((STOR_DATA_DIR + dname).c_str(), &stbuf) < 0)
-				return ret.Err(errno);
+				return std::move(ret.Err(errno));
 
-			return ret.Ok(stbuf);
+			return std::move(ret.Ok(stbuf));
 		}
 
 		/**
