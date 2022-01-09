@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "log.hpp"
-#include "resp/resp.hpp"
 #include "volume.hpp"
 
 static void exit_handler(int sig) {
@@ -15,84 +14,10 @@ static void exit_handler(int sig) {
 
 static volume::volume_type vol;
 
-// TODO: Improve the resp parser, like a lot.
-
-//	Stuff to improve:
-//	=================
-//	1. Don't SEGV on a weird request
-//	2. Make a better interface
-//	3. Make a resizeable container (or reuse std::vector)
-
-/**
- * @brief Get a file by ID
- *
- * @param data
- * @return int
- */
-static int get(char* data, void* _stream) {
-	auto* stream = (nio::ip::v4::stream*)_stream;
-
-	resp::types::bulkstr fid = data;
-
-	plog::v(LOG_INFO "parser", "Getting file: " + std::string(fid.value));
-
-	nio::buffer buf(512);
-	if (auto r = vol.get_id(fid.value)) {
-		plog::v(LOG_WARNING "volume",
-				"Cannot get file " + std::string(fid.value) + ": " +
-					std::string(r.Err().msg));
-
-		{
-			char* head = buf;
-			resp::types::error(r.Err().msg).serialize(head);
-		}
-		stream->write(buf);
-
-		return r.Err().no;
-	} else {
-		auto fobj = r.Ok();
-		auto fs	  = fobj.get();
-
-		if (auto r1 = fobj.details()) {
-			plog::v(LOG_ERROR "parser",
-					"Cannot stat file: " + std::string(fid.value));
-
-			{
-				char* head = buf;
-				resp::types::error(r.Err().msg).serialize(head);
-			}
-			stream->write(buf);
-			return r.Err().no;
-		} else {
-			buf.resize(r1.Ok().size + 1);
-			buf.at(r1.Ok().size) = 0;
-			char* head			 = buf;
-			fs.read(buf, r1.Ok().size);
-			resp::types::bulkstr(buf).serialize(head);
-			stream->write(buf);
-			return 0;
-		}
-	}
-}
-
-static int invalid(char*, void*) {
-	plog::v(LOG_WARNING "parser", "Invalid command.");
-	return 1;
-}
-
-static const resp::rcmd_t cmds[] = {{"_INV", invalid}, {"GET", get}};
-/*
-_ERR is the callback for errors (not needed on the server)
-_INV is the callback for invalid commands (not needed on the client)
-*/
-
 int main() {
 	// Register signal handlers for graceful exits
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
-
-	// Setup resp parser
-	resp::parser parser(cmds);
 
 	// Setup the volume
 	if (auto r = volume::init("/tmp/testvol")) {
@@ -153,9 +78,9 @@ int main() {
 		} else
 			data = r.Ok();
 
-		auto result = parser.parse(data, &stream);
+		// auto result = parser.parse(data, &stream);
 
-		plog::v(LOG_INFO "parser", "parse result: " + std::to_string(result));
+		plog::v(LOG_INFO "parser", "parse result: " + std::to_string(-1));
 	}
 	return 0;
 }

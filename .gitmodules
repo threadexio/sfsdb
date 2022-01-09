@@ -1,3 +1,9 @@
 [submodule "src/include/nio"]
 	path = src/include/nio
 	url = https://github.com/threadexio/nio
+[submodule "src/include/redis-plus-plus"]
+	path = src/include/redis-plus-plus
+	url = https://github.com/sewenew/redis-plus-plus
+[submodule "src/include/redis-cpp"]
+	path = src/include/redis-cpp
+	url = https://github.com/tdv/redis-cpp
