@@ -4,19 +4,21 @@
 
 #include "catch.hpp"
 
-static int invalid(std::stringstream &) {
+static int invalid(std::stringstream &, std::stringstream &, void *) {
 	return -1;
 }
 
-static int error(std::stringstream &) {
+static int error(std::stringstream &, std::stringstream &, void *) {
 	return -2;
 }
 
-static int test1(std::stringstream &) {
+static int test1(std::stringstream &, std::stringstream &res, void *) {
+	res << __func__;
+
 	return 0;
 }
 
-static int test2(std::stringstream &data) {
+static int test2(std::stringstream &data, std::stringstream &, void *) {
 	int ret = -1;
 	std::visit(rediscpp::resp::detail::overloaded {
 				   [&](resp::respds::bulk_string const &) { ret = 0; },
@@ -25,7 +27,7 @@ static int test2(std::stringstream &data) {
 	return ret;
 }
 
-static int test3(std::stringstream &data) {
+static int test3(std::stringstream &data, std::stringstream &, void *) {
 	try {
 		int ret = -1;
 
@@ -66,11 +68,13 @@ static resp::parser parser(commands);
 TEST_CASE("rediscpp wrapper tests", "[main]") {
 	SECTION("Test command \"TEST1\"", "[main]") {
 		std::stringstream ss;
+		std::stringstream opt;
 
 		resp::resps::put(ss, resp::resps::simple_string {"TEST1"});
 		resp::resps::put(ss, resp::resps::bulk_string {"extra data"});
 
-		REQUIRE(parser.parse(ss) == 0);
+		REQUIRE(parser.parse(ss, opt, nullptr) == 0);
+		REQUIRE(opt.str() == "test1");
 	}
 
 	SECTION("Test command \"TEST2\"", "[main]") {
@@ -79,7 +83,7 @@ TEST_CASE("rediscpp wrapper tests", "[main]") {
 		resp::resps::put(ss, resp::resps::simple_string {"TEST2"});
 		resp::resps::put(ss, resp::resps::bulk_string {"extra data"});
 
-		REQUIRE(parser.parse(ss) == 0);
+		REQUIRE(parser.parse(ss, ss, nullptr) == 0);
 	}
 
 	SECTION("Test command \"TEST3\"", "[main]") {
@@ -89,7 +93,7 @@ TEST_CASE("rediscpp wrapper tests", "[main]") {
 		resp::resps::put(ss, resp::resps::integer {1337});
 		resp::resps::put(ss, resp::resps::bulk_string {"argument2"});
 
-		REQUIRE(parser.parse(ss) == 0);
+		REQUIRE(parser.parse(ss, ss, nullptr) == 0);
 	}
 
 	SECTION("Test error handler", "[main]") {
@@ -99,7 +103,7 @@ TEST_CASE("rediscpp wrapper tests", "[main]") {
 			ss, resp::resps::error_message {"a meaningful error message"});
 		resp::resps::put(ss, resp::resps::integer {-42});
 
-		REQUIRE(parser.parse(ss) == -2);
+		REQUIRE(parser.parse(ss, ss, nullptr) == -2);
 	}
 
 	SECTION("Test invalid command/format handler", "[main]") {
@@ -108,6 +112,6 @@ TEST_CASE("rediscpp wrapper tests", "[main]") {
 		resp::resps::put(ss, resp::resps::bulk_string {"random data"});
 		resp::resps::put(ss, resp::resps::integer {42});
 
-		REQUIRE(parser.parse(ss) == -1);
+		REQUIRE(parser.parse(ss, ss, nullptr) == -1);
 	}
 }

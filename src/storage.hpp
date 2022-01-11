@@ -45,6 +45,7 @@ namespace storage {
 	struct data_type {
 	private:
 		std::string dname;
+		std::string fpath;
 
 	public:
 		// Only for Result
@@ -97,6 +98,15 @@ namespace storage {
 		inline std::fstream get() {
 			return std::fstream(STOR_DATA_DIR + dname,
 								std::ios::in | std::ios::binary);
+		}
+
+		/**
+		 * @brief Get file path.
+		 *
+		 * @return const std::string&
+		 */
+		inline const std::string& path() {
+			return fpath;
 		}
 	};
 

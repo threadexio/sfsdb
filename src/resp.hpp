@@ -28,7 +28,7 @@ namespace resp {
 
 	using value = rediscpp::value;
 
-	using cb_t = int (*)(std::stringstream &);
+	using cb_t = int (*)(std::stringstream &, std::stringstream &, void *);
 
 	struct rcmd_t {
 		const char *name;
@@ -72,7 +72,7 @@ namespace resp {
 		 * @return int Handler return value, or RESP_ERR_* in case of parser
 		 * error
 		 */
-		int parse(std::stringstream &data) {
+		int parse(std::stringstream &req, std::stringstream &res, void *arg) {
 			try {
 				int ret = RESP_ERR_GENERIC;
 
@@ -82,7 +82,7 @@ namespace resp {
 								   for (size_t i = 0; i < len; i++) {
 									   if (command == cmds[i].name) {
 										   if (cmds[i].cb != nullptr) {
-											   ret = cmds[i].cb(data);
+											   ret = cmds[i].cb(req, res, arg);
 											   return;
 										   } else {
 											   ret = RESP_ERR_NULL_HANDLER;
@@ -91,7 +91,7 @@ namespace resp {
 									   }
 								   }
 								   if (cb_inv != nullptr) {
-									   ret = cb_inv(data);
+									   ret = cb_inv(req, res, arg);
 									   return;
 								   } else {
 									   ret = RESP_ERR_NULL_HANDLER;
@@ -100,7 +100,7 @@ namespace resp {
 							   },
 							   [&](respds::error_message const &) -> void {
 								   if (cb_err != nullptr) {
-									   ret = cb_err(data);
+									   ret = cb_err(req, res, arg);
 									   return;
 								   } else {
 									   ret = RESP_ERR_NULL_HANDLER;
@@ -109,14 +109,14 @@ namespace resp {
 							   },
 							   [&](auto const &) {
 								   if (cb_inv != nullptr) {
-									   ret = cb_inv(data);
+									   ret = cb_inv(req, res, arg);
 									   return;
 								   } else {
 									   ret = RESP_ERR_NULL_HANDLER;
 									   return;
 								   }
 							   }},
-						   rediscpp::value {data}.get());
+						   rediscpp::value {req}.get());
 				return ret;
 			} catch (const std::exception &e) { return RESP_ERR_BAD_REQ; }
 		}

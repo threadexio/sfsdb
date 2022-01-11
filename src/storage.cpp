@@ -22,7 +22,8 @@ namespace storage {
 		mtime = _stat.st_mtim.tv_nsec / 1000 + _stat.st_mtim.tv_sec * 1000000;
 	}
 
-	data_type::data_type(const std::string& _dname) : dname(_dname) {
+	data_type::data_type(const std::string& _dname)
+		: dname(_dname), fpath(STOR_DATA_DIR + dname) {
 	}
 
 	Result<void*, Error> data_type::save(const char* const buf, size_t len) {
