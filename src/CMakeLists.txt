@@ -5,14 +5,14 @@ include_directories(include/nio/include/)
 # Resp parser
 include_directories(include/redis-cpp/include/)
 
-include_directories(include/)
 include_directories(./)
 
 file(GLOB SRC "*.cpp")
+file(GLOB HANDLER_SRC "handlers/*.cpp")
 
 add_library(main OBJECT ${SRC})
 
-add_executable(server server/server.cpp)
+add_executable(server ${HANDLER_SRC} server/server.cpp)
 target_link_libraries(server main NioStatic)
 
 add_executable(client client/client.cpp)
