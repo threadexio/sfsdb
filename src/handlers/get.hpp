@@ -93,7 +93,6 @@ namespace handlers {
 					// Send the first part of the message
 					stream->write(
 						tmp.str().c_str(), tmp.str().length(), MSG_MORE);
-					DO_TIMEOUT;
 
 					// mmap() the file into memory
 					int fd = open(r.Ok().path().c_str(), O_RDONLY);
