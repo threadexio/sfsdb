@@ -113,6 +113,11 @@ namespace handlers {
 					// And for some manual serialization
 					res << "$" << fsize << "\r\n";
 
+					// Send the first part of the message
+					stream->write(
+						res.str().c_str(), res.str().length(), MSG_MORE);
+					DO_TIMEOUT;
+
 					// mmap() the file into memory
 					int fd = open(r.Ok().path().c_str(), O_RDONLY);
 					if (fd < 0) {
@@ -134,15 +139,12 @@ namespace handlers {
 						return HANDLER_ERROR;
 					}
 
-					res.write((const char*)fptr, fsize);
+					stream->write((const char*)fptr, fsize, MSG_MORE);
 
 					munmap(fptr, fsize);
 					close(fd);
 
-					res << "\r\n";
-
-					stream->write(res.str().c_str(), res.str().length());
-					DO_TIMEOUT;
+					stream->write("\r\n", 2);
 				}
 
 				return 0;

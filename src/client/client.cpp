@@ -98,7 +98,7 @@ static int get(void* _stream, const uid::uid_type& fid) {
 }
 
 int main(int, char* argv[]) {
-	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
+	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
 
 	if (auto r = cli.Create()) {
 		plog::v(LOG_ERROR "net",
