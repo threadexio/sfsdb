@@ -15,12 +15,18 @@ extern volume::volume_type vol;
 
 namespace handlers {
 	REGISTER_HANDLER(get) {
+		/**
+		 * Command format:
+		 *
+		 * GET [file id]
+		 */
+
 		plog::v(LOG_INFO "parser", "GET command");
 
-		auto* stream = (nio::base::stream<sockaddr>*)arg;
-
+		auto*		  stream = (nio::base::stream<sockaddr>*)arg;
 		uid::uid_type fid;
 
+		// Parse command arguments
 		try {
 			fid = std::string(resp::value {req}.as_simple_string());
 		} catch (const std::exception& e) {
@@ -29,7 +35,6 @@ namespace handlers {
 		}
 
 		// Find requested file
-		size_t fsize;
 		if (auto r = vol.get_id(fid)) {
 			resp::resps::error_message(r.Err().msg).put(res);
 			return HANDLER_ERROR;
@@ -41,21 +46,20 @@ namespace handlers {
 				resp::resps::error_message(r.Err().msg).put(res);
 				return HANDLER_ERROR;
 			} else {
-				// Send the file size to the client
-				{
-					std::stringstream res;
+				int64_t fsize;
+				{ // Send the file size to the client
+					std::stringstream tmp;
 					fsize = r1.Ok().size;
-					resp::resps::simple_string("OK").put(res);
-					resp::resps::integer(r1.Ok().size).put(res);
-					stream->write(res.str().c_str(), res.str().length());
+					resp::resps::simple_string("OK").put(tmp);
+					resp::resps::integer(r1.Ok().size).put(tmp);
+					stream->write(tmp.str().c_str(), tmp.str().length());
 					DO_TIMEOUT;
 				}
 
-				// Read the client's response and make sure it is ready
-				try {
+				try { // Read the client's response and make sure it is ready
 					std::unique_ptr<char[]> buf(new char[MAX_NET_MSG_LEN + 1]);
 					stream->read(buf.get(), MAX_NET_MSG_LEN);
-					std::stringstream res {buf.get()};
+					std::stringstream tmp {buf.get()};
 
 					bool ok = false;
 					std::visit(
@@ -71,7 +75,7 @@ namespace handlers {
 							[&](auto const&) {
 								throw std::invalid_argument("Invalid response");
 							}},
-						resp::value {res}.get());
+						resp::value {tmp}.get());
 					if (! ok)
 						return HANDLER_NO_SEND_RES;
 				} catch (const std::exception& e) {
@@ -80,16 +84,15 @@ namespace handlers {
 					return HANDLER_NO_SEND_RES;
 				}
 
-				// Send the file data to the client
-				{
-					std::stringstream res;
-					resp::resps::simple_string("OK").put(res);
+				{ // Send the file data to the client
+					std::stringstream tmp;
+					resp::resps::simple_string("OK").put(tmp);
 					// And for some manual serialization
-					res << "$" << fsize << "\r\n";
+					tmp << "$" << fsize << "\r\n";
 
 					// Send the first part of the message
 					stream->write(
-						res.str().c_str(), res.str().length(), MSG_MORE);
+						tmp.str().c_str(), tmp.str().length(), MSG_MORE);
 					DO_TIMEOUT;
 
 					// mmap() the file into memory
@@ -98,7 +101,7 @@ namespace handlers {
 						plog::v(LOG_ERROR "fs",
 								std::string("Cannot open file: ") +
 									Error(errno).msg);
-						resp::resps::error_message(Error(errno).msg).put(res);
+						resp::resps::error_message(Error(errno).msg).put(tmp);
 						return HANDLER_ERROR;
 					}
 
@@ -120,7 +123,7 @@ namespace handlers {
 					stream->write("\r\n", 2);
 				}
 
-				return 0;
+				return HANDLER_NO_SEND_RES;
 			}
 		}
 	}
