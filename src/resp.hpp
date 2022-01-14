@@ -23,6 +23,15 @@
 
 namespace resp {
 
+	enum class types {
+		ARRAY,
+		BULK_STR,
+		ERROR,
+		NUL,
+		INTEGER,
+		SIMPLE_STR,
+	};
+
 	namespace resps	 = rediscpp::resp::serialization;
 	namespace respds = rediscpp::resp::deserialization;
 
@@ -34,6 +43,24 @@ namespace resp {
 		const char *name;
 		cb_t		cb;
 	};
+
+	inline types get_type(resp::value &val) {
+		types ret;
+		try {
+			std::visit(
+				rediscpp::resp::detail::overloaded {
+					[&](respds::simple_string const &) {
+						ret = types::SIMPLE_STR;
+					},
+					[&](respds::error_message const &) { ret = types::ERROR; },
+					[&](respds::bulk_string const &) { ret = types::BULK_STR; },
+					[&](respds::integer const &) { ret = types::INTEGER; },
+					[&](respds::array const &) { ret = types::ARRAY; },
+					[&](auto const &) { ret = types::NUL; }},
+				val.get());
+		} catch (const std::exception &) { return types::NUL; }
+		return ret;
+	}
 
 	class parser {
 	private:

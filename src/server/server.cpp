@@ -98,7 +98,10 @@ int main() {
 
 		plog::v(LOG_INFO "parser", "Handler status: " + std::to_string(result));
 
-		if (result != HANDLER_NO_SEND_RES) {
+		// The handler is expected to return HANDLER_ERROR and set the desired
+		// response in res if there is an error and the response isn't sent from
+		// the handler
+		if (result == HANDLER_ERROR) {
 			if (auto r = stream.write(res.str().c_str(), res.str().length())) {
 				plog::v(LOG_WARNING "net",
 						std::string("Cannot write: ") + r.Err().msg);

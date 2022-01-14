@@ -1,13 +1,16 @@
 #pragma once
 #include "error.h"
-#include "handlers/helper.hpp"
 #include "log.hpp"
 #include "misc.hpp"
 #include "resp.hpp"
 #include "volume.hpp"
 
-#define HANDLER_ERROR		-1
-#define HANDLER_NO_SEND_RES -2
+//==============//
+
+#include "handlers/helper.hpp"
+
+#define REGISTER_HANDLER(name)                                                 \
+	inline int name(std::stringstream& req, std::stringstream& res, void* arg)
 
 //==============//
 
