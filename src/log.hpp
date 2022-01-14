@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <ctime>
 #include <string>
+#include <string_view>
 
 // source: https://gist.github.com/JBlond/2fea43a3049b38287e5e9cefc87b2124
 #define LOG_COLOR_BLACK	 "\e[0;30m"
@@ -37,5 +38,5 @@ namespace plog {
 	 * @param _id Id of the caller
 	 * @param _msg Message to log
 	 */
-	void v(const std::string& _id, const std::string& _msg);
+	void v(const char* _id, const char* fmt, ...);
 } // namespace plog

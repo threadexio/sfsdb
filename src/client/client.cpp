@@ -50,7 +50,8 @@ static int get(void* _stream, const uid::uid_type& fid) {
 						   },
 						   [&](resp::respds::error_message const& val) {
 							   plog::v(LOG_ERROR "server",
-									   std::string(val.get()));
+									   "Error: %s",
+									   std::string(val.get()).c_str());
 						   },
 						   [&](auto const&) {
 							   throw std::invalid_argument("invalid response");
@@ -61,7 +62,7 @@ static int get(void* _stream, const uid::uid_type& fid) {
 
 			fsize = resp::value(res).as_integer();
 		} catch (const std::exception& e) {
-			plog::v(LOG_ERROR "get", e.what());
+			plog::v(LOG_ERROR "get", "%s", e.what());
 			return -1;
 		}
 	}
@@ -96,15 +97,14 @@ int main(int, char* argv[]) {
 	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
 
 	if (auto r = cli.Create()) {
-		plog::v(LOG_ERROR "net",
-				"Cannot create socket: " + std::string(r.Err().msg));
+		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);
 		exit(r.Err().no);
 	}
 
 	nio::ip::v4::stream stream;
 
 	if (auto r = cli.Connect()) {
-		plog::v(LOG_ERROR "net", "Cannot connect: " + std::string(r.Err().msg));
+		plog::v(LOG_ERROR "net", "Cannot connect: %s", r.Err().msg);
 		exit(r.Err().no);
 	} else
 		stream = r.Ok();

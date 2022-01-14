@@ -65,12 +65,12 @@ namespace helper {
 	}
 
 	inline int log_read_error(const nio::Error& e) {
-		plog::v(LOG_WARNING "net", std::string("Cannot read: ") + e.msg);
+		plog::v(LOG_WARNING "net", "Cannot read: %s", e.msg);
 		return HANDLER_NO_SEND_RES;
 	}
 
 	inline int log_write_error(const nio::Error& e) {
-		plog::v(LOG_WARNING "net", std::string("Cannot write: ") + e.msg);
+		plog::v(LOG_WARNING "net", "Cannot write: %s", e.msg);
 		return HANDLER_NO_SEND_RES;
 	}
 

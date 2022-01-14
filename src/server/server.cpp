@@ -37,8 +37,7 @@ int main() {
 
 	// Setup the volume
 	if (auto r = volume::init("/tmp/testvol")) {
-		plog::v(LOG_ERROR "volume",
-				"Cannot initialize volume: " + std::string(r.Err().msg));
+		plog::v(LOG_ERROR "volume", "Initialization: %s", r.Err().msg);
 		exit(r.Err().no);
 	} else
 		vol = r.Ok();
@@ -50,8 +49,7 @@ int main() {
 	nio::ip::v4::server srv(nio::ip::v4::addr("127.0.0.1", 8888));
 
 	if (auto r = srv.Create()) {
-		plog::v(LOG_ERROR "net",
-				"Cannot create socket: " + std::string(r.Err().msg));
+		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);
 		exit(r.Err().no);
 	}
 
@@ -59,13 +57,12 @@ int main() {
 	setsockopt(srv.raw(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
 	if (auto r = srv.Bind()) {
-		plog::v(LOG_ERROR "net", std::string(r.Err().msg));
+		plog::v(LOG_ERROR "net", "Cannot bind socket: %s", r.Err().msg);
 		exit(r.Err().no);
 	}
 
 	if (auto r = srv.Listen()) {
-		plog::v(LOG_ERROR "net",
-				"Cannot listen on socket: " + std::string(r.Err().msg));
+		plog::v(LOG_ERROR "net", "Cannot listen on socket: %s", r.Err().msg);
 		exit(r.Err().no);
 	}
 
@@ -73,21 +70,20 @@ int main() {
 	for (;;) {
 		nio::ip::v4::stream stream;
 		if (auto r = srv.Accept()) {
-			plog::v(LOG_WARNING "net",
-					"Cannot accept: " + std::string(r.Err().msg));
+			plog::v(LOG_WARNING "net", "Cannot accept: %s", r.Err().msg);
 			continue;
 		} else
 			stream = r.Ok();
 
 		plog::v(LOG_INFO "net",
-				"Connected: " + stream.peer().ip() + ":" +
-					std::to_string(stream.peer().port()));
+				"Connected: %s:%zu",
+				stream.peer().ip().c_str(),
+				stream.peer().port());
 
 		// Read and parse a command
 		std::unique_ptr<char[]> buf(new char[MAX_NET_MSG_LEN + 1]);
 		if (auto r = stream.read(buf.get(), MAX_NET_MSG_LEN)) {
-			plog::v(LOG_WARNING "net",
-					std::string("Cannot read: ") + r.Err().msg);
+			plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
 			continue;
 		}
 
@@ -96,15 +92,14 @@ int main() {
 
 		auto result = parser.parse(req, res, &stream);
 
-		plog::v(LOG_INFO "parser", "Handler status: " + std::to_string(result));
+		plog::v(LOG_INFO "parser", "Handler status: %d", result);
 
 		// The handler is expected to return HANDLER_ERROR and set the desired
 		// response in res if there is an error and the response isn't sent from
 		// the handler
 		if (result == HANDLER_ERROR) {
 			if (auto r = stream.write(res.str().c_str(), res.str().length())) {
-				plog::v(LOG_WARNING "net",
-						std::string("Cannot write: ") + r.Err().msg);
+				plog::v(LOG_WARNING "net", "Cannot write: %s", r.Err().msg);
 				continue;
 			}
 		}

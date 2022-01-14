@@ -24,7 +24,7 @@ namespace handlers {
 		// Parse command arguments
 		uid::uid_type fid;
 		if (auto r = helper::get_simple_str(req)) {
-			plog::v("parser", r.Err());
+			plog::v("parser", "%s", r.Err());
 			return HANDLER_ERROR;
 		} else
 			fid = r.Ok();
@@ -40,8 +40,8 @@ namespace handlers {
 		// Get file size
 		int64_t fsize;
 		if (auto r1 = file.details()) {
-			plog::v(LOG_WARNING "fs",
-					std::string("Cannot get file details: ") + r1.Err().msg);
+			plog::v(
+				LOG_WARNING "fs", "Cannot get file details: %s", r1.Err().msg);
 			resp::resps::error_message(r1.Err().msg).put(res);
 			return HANDLER_ERROR;
 		} else
@@ -76,7 +76,8 @@ namespace handlers {
 
 				case resp::types::ERROR:
 					plog::v(LOG_NOTICE "client",
-							std::string(val.as_error_message()));
+							"%s",
+							std::string(val.as_error_message()).c_str());
 					return HANDLER_NO_SEND_RES;
 					break;
 
@@ -101,8 +102,8 @@ namespace handlers {
 			// mmap() the file into memory
 			int fd = open(file.path().c_str(), O_RDONLY);
 			if (fd < 0) {
-				plog::v(LOG_ERROR "fs",
-						std::string("Cannot open file: ") + Error(errno).msg);
+				plog::v(
+					LOG_ERROR "fs", "Cannot open file: %s", Error(errno).msg);
 				resp::resps::error_message(Error(errno).msg).put(tmp);
 				return HANDLER_ERROR;
 			}
@@ -110,8 +111,8 @@ namespace handlers {
 			void* fptr =
 				mmap(NULL, fsize, PROT_READ, MAP_PRIVATE | MAP_STACK, fd, 0);
 			if (fptr == MAP_FAILED) {
-				plog::v(LOG_ERROR "fs",
-						std::string("Cannot map file: ") + Error(errno).msg);
+				plog::v(
+					LOG_ERROR "fs", "Cannot map file: %s", Error(errno).msg);
 				resp::resps::error_message(Error(errno).msg);
 				return HANDLER_ERROR;
 			}
