@@ -8,6 +8,7 @@
 #include "handlers.hpp"
 #include "log.hpp"
 #include "misc.hpp"
+#include "protocol.hpp"
 #include "volume.hpp"
 
 static void exit_handler(int sig) {
@@ -17,23 +18,13 @@ static void exit_handler(int sig) {
 
 volume::volume_type vol;
 
-namespace handlers {
-
-	static int invalid(std::stringstream&, std::stringstream&, void*) {
-		plog::v(LOG_INFO "parser", "Invalid command");
-		return 0;
-	}
-} // namespace handlers
-
-static const resp::rcmd_t cmds[] = {{RESP_INV_HANDLER, handlers::invalid},
-									{"GET", handlers::get}};
+static protocol::cmd_table commands = {
+	{protocol::INVALID_HANDLER, handlers::invalid}, {16, handlers::get}};
 
 int main() {
 	// Register signal handlers for graceful exits
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
-
-	resp::parser parser(cmds);
 
 	// Setup the volume
 	if (auto r = volume::init("/tmp/testvol")) {
@@ -80,17 +71,23 @@ int main() {
 				stream.peer().ip().c_str(),
 				stream.peer().port());
 
-		// Read and parse a command
-		std::unique_ptr<char[]> buf(new char[MAX_NET_MSG_LEN + 1]);
-		if (auto r = stream.read(buf.get(), MAX_NET_MSG_LEN)) {
+		// Read the message header
+		char tmp[protocol::HEADER_SIZE];
+		if (auto r = stream.read(tmp, protocol::HEADER_SIZE, MSG_WAITALL)) {
+			plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
+			continue;
+		}
+		auto head = protocol::header::from(tmp);
+
+		std::unique_ptr<char[]> req(new char[head.length]);
+		if (auto r = stream.read(req.get(), head.length, MSG_WAITALL)) {
 			plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
 			continue;
 		}
 
-		std::stringstream req {buf.get()};
 		std::stringstream res;
 
-		auto result = parser.parse(req, res, &stream);
+		auto result = protocol::parse(commands, head, req.get(), res, &stream);
 
 		plog::v(LOG_INFO "parser", "Handler status: %d", result);
 

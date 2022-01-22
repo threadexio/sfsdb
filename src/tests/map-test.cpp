@@ -51,10 +51,10 @@ TEST_CASE("map tests", "[main]") {
 
 	SECTION("Test creation of objects", "[main]") {
 		REQUIRE(m.exists(id1));
-		REQUIRE(fcontains(testpath + MAP_ID_DIR + id1, objname));
+		REQUIRE(fcontains(testpath + map::ID_DIR + id1, objname));
 
 		REQUIRE(m.exists(id2));
-		REQUIRE(fcontains(testpath + MAP_ID_DIR + id2, objname));
+		REQUIRE(fcontains(testpath + map::ID_DIR + id2, objname));
 	};
 
 	SECTION("Test by_name()", "[main]") {
@@ -84,15 +84,15 @@ TEST_CASE("map tests", "[main]") {
 		if (auto r = m.remove(id1))
 			LOG_ERROR(r.Err().msg)
 
-		REQUIRE(std::filesystem::exists(testpath + MAP_ID_DIR + id1) == false);
-		REQUIRE(fcontains(testpath + MAP_NAME_DIR + objname, id1.c_str()) ==
+		REQUIRE(std::filesystem::exists(testpath + map::ID_DIR + id1) == false);
+		REQUIRE(fcontains(testpath + map::NAME_DIR + objname, id1.c_str()) ==
 				false);
 
 		while (! m.ids.empty())
 			if (auto r = m.remove(m.ids[0]))
 				LOG_ERROR(r.Err().msg)
 
-		REQUIRE(std::filesystem::exists(testpath + MAP_NAME_DIR + objname) ==
+		REQUIRE(std::filesystem::exists(testpath + map::NAME_DIR + objname) ==
 				false);
 	}
 }

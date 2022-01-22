@@ -26,14 +26,13 @@
  * hex representation	(32)
  */
 
-#define UID_SEPARATOR '-'
-#define UID_RDATA_LEN 6
-#define UID_DATA_LEN  14
-#define UID_TOTAL_LEN 32
-
-#define UID_RAND_DEV "/dev/urandom"
-
 namespace uid {
+
+	constexpr auto RAND_DEV	 = "/dev/urandom";
+	constexpr int  RDATA_LEN = 6;
+	constexpr int  DATA_LEN	 = 14;
+	constexpr int  TOTAL_LEN = 32;
+	constexpr char SEPARATOR = '-';
 
 	using uid_type = std::string;
 
@@ -44,7 +43,7 @@ namespace uid {
 		 *
 		 * @param dev File/Device to read random data from
 		 */
-		generator(const char *dev = UID_RAND_DEV);
+		generator(const char *dev = RAND_DEV);
 
 		// std::fstream also deletes these, so we cant use them
 		generator(const generator &other) noexcept = delete;

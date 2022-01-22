@@ -12,7 +12,7 @@ TEST_CASE("uid generator tests", "[main]") {
 
 	SECTION("Test uid format") {
 		auto cur = uidgen.get();
-		REQUIRE(cur.length() == UID_TOTAL_LEN);
+		REQUIRE(cur.length() == uid::TOTAL_LEN);
 	}
 
 	SECTION("Test uid uniqueness", "[main]") {

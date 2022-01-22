@@ -1,8 +1,6 @@
 #pragma once
 
-extern "C" {
 #include <sys/stat.h>
-}
 
 #include <filesystem>
 #include <fstream>
@@ -13,6 +11,9 @@ extern "C" {
 #define STOR_DATA_DIR "data/"
 
 namespace storage {
+
+	constexpr auto DATA_DIR = "data/";
+
 	struct meta {
 		// Last access time (microseconds)
 		uint64_t atime;

@@ -8,23 +8,17 @@
 #include "common.hpp"
 #include "uid.hpp"
 
-#define MAP_DIR		 "map/"
-#define MAP_ID_DIR	 MAP_DIR "by-id/"
-#define MAP_NAME_DIR MAP_DIR "by-name/"
-
-#define MAP_SEPARATOR '\n'
-
-#define MAP_SEPARATOR_LEN 1
-#define MAP_CHUNK_LEN	  (UID_TOTAL_LEN + MAP_SEPARATOR_LEN)
-
-static constexpr bool _char_equal(char x, char y) {
-	return x == y;
-}
-
-static_assert(! _char_equal(MAP_SEPARATOR, UID_SEPARATOR),
-			  "MAP and UID separators cannot be the same");
-
 namespace map {
+
+	constexpr const char* ID_DIR		= "map/by-id/";
+	constexpr const char* NAME_DIR		= "map/by-name/";
+	constexpr const char  SEPARATOR		= '\n';
+	constexpr int		  SEPARATOR_LEN = 1;
+	constexpr int		  CHUNK_LEN		= (uid::TOTAL_LEN + SEPARATOR_LEN);
+
+	static_assert(SEPARATOR != uid::SEPARATOR,
+				  "MAP and UID separators cannot be the same");
+
 	struct map_type {
 		std::string				   name;
 		std::vector<uid::uid_type> ids;

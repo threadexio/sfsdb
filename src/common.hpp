@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstring>
 
+#define UNUSED(x) (void)x
+
 /**
  * @brief Simple type for error handling in return values. ("Inspired" by
  * Rust)

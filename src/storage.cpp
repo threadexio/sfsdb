@@ -12,8 +12,6 @@
 #include <fstream>
 #include <string>
 
-#define STOR_DATA_DIR "data/"
-
 namespace storage {
 
 	meta::meta(const struct stat& _stat) {
@@ -23,13 +21,13 @@ namespace storage {
 	}
 
 	data_type::data_type(const std::string& _dname)
-		: dname(_dname), fpath(STOR_DATA_DIR + dname) {
+		: dname(_dname), fpath(DATA_DIR + dname) {
 	}
 
 	Result<void*, Error> data_type::save(const char* const buf, size_t len) {
 		Result<void*, Error> ret;
 
-		std::fstream stream(STOR_DATA_DIR + dname,
+		std::fstream stream(DATA_DIR + dname,
 							std::ios::out | std::ios::trunc | std::ios::binary);
 		if (stream.fail())
 			return std::move(ret.Err(errno));
@@ -37,7 +35,7 @@ namespace storage {
 		stream.write(buf, len);
 		stream.close();
 
-		stream.open(STOR_DATA_DIR + dname, std::ios::in);
+		stream.open(DATA_DIR + dname, std::ios::in);
 		if (stream.fail())
 			return std::move(ret.Err(errno));
 

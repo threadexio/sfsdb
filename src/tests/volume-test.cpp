@@ -83,8 +83,6 @@ TEST_CASE("volume tests", "[main]") {
 			else
 				metadata = r.Ok();
 
-			// REQUIRE(metadata.size == strlen(testfiles[i].fdata));
-
 			fobj.get().read(buf, 4095);
 			REQUIRE(strcmp(buf, testfiles[i].fdata) == 0);
 		}
