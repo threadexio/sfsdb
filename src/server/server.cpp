@@ -18,9 +18,6 @@ static void exit_handler(int sig) {
 
 volume::volume_type vol;
 
-static protocol::cmd_table commands = {
-	{protocol::commands::INVALID, handlers::invalid}, {1, handlers::get}};
-
 int main() {
 	// Register signal handlers for graceful exits
 	signal(SIGINT, exit_handler);

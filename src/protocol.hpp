@@ -26,6 +26,11 @@ namespace protocol {
 		return endian::net::to_hosts(*(cmd_type*)in);
 	}
 
+	namespace status {
+		constexpr cmd_type SUCCESS = 0;
+		constexpr cmd_type ERROR   = 1;
+	} // namespace status
+
 	namespace types {
 
 		namespace ids {

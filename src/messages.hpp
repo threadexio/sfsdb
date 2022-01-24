@@ -8,7 +8,8 @@ namespace protocol {
 			protocol::types::header head;
 			protocol::types::error	err;
 
-			error(const char* msg) : head(1, 0), err(msg) {
+			error(const char* msg)
+				: head(protocol::status::ERROR, 0), err(msg) {
 				head.length =
 					protocol::types::error::DATA_HEADER_SIZE + err.length;
 			}

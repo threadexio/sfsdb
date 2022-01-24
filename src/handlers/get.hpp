@@ -20,21 +20,20 @@ namespace handlers {
 		 * Request: [header] (string)[fid]
 		 * Response: [header] (bigdata)[filedata]
 		 */
+		UNUSED(head);
 
 		plog::v(LOG_INFO "parser", "GET command");
 
 		auto* stream = (stream_type*)arg;
 
-		uid::uid_type fid;
+		protocol::types::string fid;
 		if (protocol::get_type(req) != protocol::types::ids::STRING) {
 			plog::v(LOG_INFO "get", "Wrong parameter type");
 			protocol::messages::error("Wrong parameter type").to(res);
 			return HANDLER_ERROR;
 		} else {
-			protocol::types::string tmp;
-			tmp.from(req);
-			fid = tmp.str;
-			if (fid == "") {
+			fid.from(req);
+			if (fid.str == "") {
 				protocol::messages::error("Expected file id").to(res);
 				return HANDLER_ERROR;
 			}
@@ -42,7 +41,7 @@ namespace handlers {
 
 		// Get file data object
 		storage::data_type file;
-		if (auto r = vol.get_id(fid)) {
+		if (auto r = vol.get_id(fid.str)) {
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else
