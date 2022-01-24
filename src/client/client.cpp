@@ -12,36 +12,59 @@ static int get(void* _stream, const uid::uid_type& fid) {
 
 	{
 		// Send the command
-		char tmp[protocol::HEADER_SIZE];
-		protocol::header {16 /* GET command, as defined in server.cpp */, 32}
-			.to(tmp);
-		stream->write(tmp, sizeof(tmp), MSG_MORE);
-		stream->write(fid.data(), 32);
+		std::stringstream command;
+		protocol::types::header(
+			1, protocol::types::string::DATA_HEADER_SIZE + fid.length())
+			.to(command);
+		protocol::types::string(fid.c_str()).to(command);
+
+		if (auto r =
+				stream->write(command.str().c_str(), command.str().length())) {
+			plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
+			return r.Err().no;
+		}
 	}
 
-	// read response
-	char tmp[protocol::HEADER_SIZE];
-	stream->read(tmp, protocol::HEADER_SIZE, MSG_WAITALL);
-	auto head = protocol::header::from(tmp);
+	// read response message header
+	protocol::types::header head;
+	{
+		char tmp[protocol::types::header::SIZE];
+		stream->read(tmp, sizeof(tmp), MSG_WAITALL);
+		const char* tmp1 = tmp;
+		head.from(tmp1);
+	}
+
+	if (head.type != protocol::types::ids::HEADER) {
+		plog::v(LOG_ERROR "server", "Bad response");
+		return -1;
+	}
 
 	std::unique_ptr<char[]> buf(new char[head.length + 1]);
-	stream->read(buf.get(), head.length, MSG_WAITALL);
+	if (auto r = stream->read(buf.get(), head.length, MSG_WAITALL)) {
+		plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().msg);
+		return r.Err().no;
+	}
 	buf.get()[head.length] = 0;
 
-	if (head.command == protocol::SUCCESS_HANDLER) {
+	// read response data
+	protocol::types::bigdata fdata_header;
+	const char*				 tmp = buf.get();
+	fdata_header.from(tmp);
+
+	if (head.command == 0) {
 		plog::v(LOG_INFO "get",
 				"Received %u bytes: \"%s\"",
-				head.length,
-				buf.get());
+				fdata_header.length,
+				tmp);
 	} else {
-		plog::v(LOG_ERROR "get", "Error: %s", buf.get());
+		plog::v(LOG_ERROR "get", "Error: %s", tmp);
 	}
 
 	return 0;
 }
 
 int main(int, char* argv[]) {
-	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
+	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
 
 	if (auto r = cli.Create()) {
 		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);

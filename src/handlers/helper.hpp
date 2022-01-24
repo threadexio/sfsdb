@@ -2,17 +2,17 @@
 
 #include "error.h"
 #include "log.hpp"
+#include "messages.hpp"
 #include "misc.hpp"
-#include "protocol.hpp"
 #include "volume.hpp"
 
 //==============//
 
 #define REGISTER_HANDLER(name)                                                 \
-	inline int name(const protocol::header& head,                              \
-					char*					req,                               \
-					std::stringstream&		res,                               \
-					void*					arg)
+	inline int name(const protocol::types::header& head,                       \
+					const char*					   req,                        \
+					std::stringstream&			   res,                        \
+					void*						   arg)
 
 //==============//
 

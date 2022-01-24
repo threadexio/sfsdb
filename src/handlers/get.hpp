@@ -17,59 +17,81 @@ namespace handlers {
 		 *
 		 * Binary format:
 		 *
-		 * Request: [header][fid]
-		 * Response: [header][filedata]
+		 * Request: [header] (string)[fid]
+		 * Response: [header] (bigdata)[filedata]
 		 */
-		UNUSED(head);
 
 		plog::v(LOG_INFO "parser", "GET command");
 
 		auto* stream = (stream_type*)arg;
 
-		uid::uid_type fid(req, 32);
+		uid::uid_type fid;
+		if (protocol::get_type(req) != protocol::types::ids::STRING) {
+			plog::v(LOG_INFO "get", "Wrong parameter type");
+			protocol::messages::error("Wrong parameter type").to(res);
+			return HANDLER_ERROR;
+		} else {
+			protocol::types::string tmp;
+			tmp.from(req);
+			fid = tmp.str;
+			if (fid == "") {
+				protocol::messages::error("Expected file id").to(res);
+				return HANDLER_ERROR;
+			}
+		}
 
+		// Get file data object
 		storage::data_type file;
 		if (auto r = vol.get_id(fid)) {
-			protocol::types::error(r.Err().msg).to(res);
+			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else
 			file = r.Ok();
 
+		// Get file size
 		uint32_t fsize;
 		if (auto r = file.details()) {
 			plog::v(
 				LOG_WARNING "fs", "Cannot get file details: %s", r.Err().msg);
-			protocol::types::error(r.Err().msg).to(res);
+			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else
 			fsize = r.Ok().size;
 
 		// Send the file data to the client
-		// mmap() the file into memory
 		int fd = open(file.path().c_str(), O_RDONLY);
 		if (fd < 0) {
 			plog::v(LOG_ERROR "fs", "Cannot open file: %s", Error(errno).msg);
-			protocol::types::error(Error(errno).msg).to(res);
+			protocol::messages::error(Error(errno).msg).to(res);
 			return HANDLER_ERROR;
 		}
 
+		// mmap() the file into memory
 		void* fptr =
 			mmap(NULL, fsize, PROT_READ, MAP_PRIVATE | MAP_STACK, fd, 0);
 		if (fptr == MAP_FAILED) {
 			plog::v(LOG_ERROR "fs", "Cannot map file: %s", Error(errno).msg);
-			protocol::types::error(Error(errno).msg).to(res);
+			protocol::messages::error(Error(errno).msg).to(res);
 			return HANDLER_ERROR;
 		}
 
-		{ // Send the header
-			char tmp[protocol::HEADER_SIZE];
+		{ // Send the headers
+			std::stringstream tmp;
 
-			protocol::header {protocol::SUCCESS_HANDLER, fsize}.to(tmp);
+			protocol::types::header(
+				0, protocol::types::bigdata::DATA_HEADER_SIZE + fsize)
+				.to(tmp);
 
-			if (auto r = stream->write(tmp, protocol::HEADER_SIZE, MSG_MORE)) {}
+			protocol::types::bigdata(fsize).to(tmp);
+
+			if (auto r = stream->write(
+					tmp.str().c_str(), tmp.str().length(), MSG_MORE))
+				return HANDLER_NO_SEND_RES;
 		}
 
-		if (auto r = stream->write((const char*)fptr, fsize)) {}
+		// Send the file
+		if (auto r = stream->write((const char*)fptr, fsize))
+			return HANDLER_NO_SEND_RES;
 
 		munmap(fptr, fsize);
 		close(fd);

@@ -11,7 +11,7 @@ namespace handlers {
 		UNUSED(req);
 		UNUSED(arg);
 
-		plog::v("invalid", "Invalid command: %x", head.command);
+		plog::v("invalid", "Invalid command: %x", head.type);
 		return 0;
 	}
 } // namespace handlers

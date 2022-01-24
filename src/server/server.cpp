@@ -19,7 +19,7 @@ static void exit_handler(int sig) {
 volume::volume_type vol;
 
 static protocol::cmd_table commands = {
-	{protocol::INVALID_HANDLER, handlers::invalid}, {16, handlers::get}};
+	{protocol::commands::INVALID, handlers::invalid}, {1, handlers::get}};
 
 int main() {
 	// Register signal handlers for graceful exits
@@ -66,18 +66,30 @@ int main() {
 		} else
 			stream = r.Ok();
 
+		plog::v("", "--------------------");
+
 		plog::v(LOG_INFO "net",
 				"Connected: %s:%zu",
 				stream.peer().ip().c_str(),
 				stream.peer().port());
 
 		// Read the message header
-		char tmp[protocol::HEADER_SIZE];
-		if (auto r = stream.read(tmp, protocol::HEADER_SIZE, MSG_WAITALL)) {
-			plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
-			continue;
+		protocol::types::header head;
+		{
+			char tmp[protocol::types::header::SIZE];
+			if (auto r = stream.read(tmp, sizeof(tmp), MSG_WAITALL)) {
+				plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
+				continue;
+			}
+
+			if (protocol::get_type(tmp) != protocol::types::ids::HEADER) {
+				plog::v(LOG_WARNING "client", "Bad request");
+				continue;
+			}
+
+			const char* tmp1 = tmp;
+			head.from(tmp1);
 		}
-		auto head = protocol::header::from(tmp);
 
 		std::unique_ptr<char[]> req(new char[head.length]);
 		if (auto r = stream.read(req.get(), head.length, MSG_WAITALL)) {
