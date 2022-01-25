@@ -7,6 +7,7 @@ set (TEST_TARGETS
 	map-test
 	storage-test
 	volume-test
+	protocol-test
 )
 
 message(STATUS "Enabled tests")

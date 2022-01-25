@@ -17,7 +17,7 @@ static int get(void* _stream, const uid::uid_type& id) {
 		std::stringstream		tmp;
 		protocol::types::string fid(id.c_str());
 		protocol::types::header head(
-			1, protocol::types::string::DATA_HEADER_SIZE + fid.length);
+			1, protocol::types::string::HEADER_SIZE + fid.length);
 
 		head.to(tmp);
 		fid.to(tmp);
@@ -74,10 +74,9 @@ static int put(void*			  _stream,
 		// Construct the command
 		std::stringstream tmp;
 
-		protocol::types::header head(
-			2,
-			protocol::types::string::DATA_HEADER_SIZE +
-				protocol::types::bigdata::DATA_HEADER_SIZE);
+		protocol::types::header head(2,
+									 protocol::types::string::HEADER_SIZE +
+										 protocol::types::bigdata::HEADER_SIZE);
 
 		protocol::types::string fname(filename.c_str());
 		head.length += fname.length;

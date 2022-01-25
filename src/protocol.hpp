@@ -63,8 +63,7 @@ namespace protocol {
 
 			// The sum of bytes of the 2 fields in data, this is only so we know
 			// how much to read.
-			static constexpr size_t DATA_HEADER_SIZE =
-				sizeof(type) + sizeof(length);
+			static constexpr size_t HEADER_SIZE = sizeof(type) + sizeof(length);
 
 		protected:
 			virtual void _to(std::stringstream& out) const = 0;
@@ -73,7 +72,22 @@ namespace protocol {
 		};
 
 		/**
-		 * @brief Command header, does not encode any data.
+		 * @brief An empty type.
+		 *
+		 */
+		struct invalid : public data<ids::INVALID> {
+			static constexpr size_t SIZE = HEADER_SIZE;
+
+		private:
+			void _to(std::stringstream&) const {
+			}
+
+			void _from(const char*&) {
+			}
+		};
+
+		/**
+		 * @brief Message header, does not encode any data.
 		 *
 		 */
 		struct header : public data<ids::HEADER> {
@@ -87,7 +101,7 @@ namespace protocol {
 				length	= _length;
 			}
 
-			static constexpr size_t SIZE = DATA_HEADER_SIZE + sizeof(command);
+			static constexpr size_t SIZE = HEADER_SIZE + sizeof(command);
 
 		private:
 			void _to(std::stringstream& out) const {
@@ -122,7 +136,7 @@ namespace protocol {
 
 			void _from(const char*& in) {
 				strncpy(msg, in, sizeof(msg) - 1);
-				msg[sizeof(msg) - 1] = 0;
+				msg[(length > sizeof(msg) - 1) ? sizeof(msg) - 1 : length] = 0;
 				in += length;
 			}
 		};
@@ -140,6 +154,8 @@ namespace protocol {
 			smallint(smallint_type _val) : val(_val) {
 				length = sizeof(val);
 			}
+
+			static constexpr size_t SIZE = HEADER_SIZE + sizeof(val);
 
 		private:
 			void _to(std::stringstream& out) const {
@@ -164,6 +180,8 @@ namespace protocol {
 			integer(integer_type _val) : val(_val) {
 				length = sizeof(val);
 			}
+
+			static constexpr size_t SIZE = HEADER_SIZE + sizeof(val);
 
 		private:
 			void _to(std::stringstream& out) const {

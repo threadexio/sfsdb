@@ -73,7 +73,7 @@ namespace handlers {
 
 			protocol::types::header(
 				protocol::status::SUCCESS,
-				protocol::types::string::DATA_HEADER_SIZE + fid.length)
+				protocol::types::string::HEADER_SIZE + fid.length)
 				.to(tmp);
 			fid.to(tmp);
 

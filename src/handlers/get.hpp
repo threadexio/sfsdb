@@ -78,7 +78,7 @@ namespace handlers {
 			std::stringstream tmp;
 
 			protocol::types::header(
-				0, protocol::types::bigdata::DATA_HEADER_SIZE + fsize)
+				0, protocol::types::bigdata::HEADER_SIZE + fsize)
 				.to(tmp);
 
 			protocol::types::bigdata(fsize).to(tmp);

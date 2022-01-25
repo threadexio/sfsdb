@@ -10,8 +10,7 @@ namespace protocol {
 
 			error(const char* msg)
 				: head(protocol::status::ERROR, 0), err(msg) {
-				head.length =
-					protocol::types::error::DATA_HEADER_SIZE + err.length;
+				head.length = protocol::types::error::HEADER_SIZE + err.length;
 			}
 
 			void to(std::stringstream& out) {
