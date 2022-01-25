@@ -94,9 +94,9 @@ TEST_CASE("volume tests", "[main]") {
 
 	SECTION("Cleanup", "[main]") {
 		// Cleanup
-		// for (size_t i = 0; i < SIZE(testfiles); i++) {
-		//	if (auto r = vol.remove(testfiles[i].id))
-		//		LOG_ERROR(r.Err().msg)
-		//}
+		for (size_t i = 0; i < SIZE(testfiles); i++) {
+			if (auto r = vol.remove(testfiles[i].id))
+				LOG_ERROR(r.Err().msg)
+		}
 	}
 }

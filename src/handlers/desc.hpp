@@ -24,7 +24,7 @@ namespace handlers {
 
 		protocol::types::string fid;
 		if (protocol::get_type(req) != protocol::types::ids::STRING) {
-			plog::v(LOG_INFO "get", "Wrong parameter type");
+			plog::v(LOG_INFO "desc", "Wrong parameter type");
 			protocol::messages::error("Wrong parameter type").to(res);
 			return HANDLER_ERROR;
 		} else {

@@ -242,13 +242,66 @@ static int desc(void* _stream, const uid::uid_type& id) {
 	return 0;
 }
 
+static int del(void* _stream, const uid::uid_type& id) {
+	auto* stream = (nio::base::stream<sockaddr>*)_stream;
+
+	{
+		std::stringstream tmp;
+
+		protocol::types::header(
+			4, protocol::types::string::HEADER_SIZE + id.length())
+			.to(tmp);
+		protocol::types::string(id.c_str()).to(tmp);
+
+		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+			plog::v(LOG_ERROR "net", "Cannnot write: %s", r.Err().msg);
+			return r.Err().no;
+		}
+	}
+
+	{
+		// Read message header
+		protocol::types::header head;
+		{
+			char buf[protocol::types::header::SIZE];
+			if (auto r = stream->read(buf, sizeof(buf))) {
+				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
+				return r.Err().no;
+			}
+
+			const char* tmp = buf;
+			head.from(tmp);
+
+			if (head.type != protocol::types::ids::HEADER) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+		}
+
+		std::unique_ptr<char[]> _req(new char[head.length + 1]);
+		if (auto r = stream->read(_req.get(), head.length)) {
+			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
+			return r.Err().no;
+		}
+		const char* req = _req.get();
+
+		if (head.command != protocol::status::SUCCESS) {
+			protocol::types::error err;
+			err.from(req);
+			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
+			return -1;
+		}
+		return 0;
+	}
+}
+
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " command [command args...]\n";
 		return EXIT_FAILURE;
 	}
 
-	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
+	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
 
 	if (auto r = cli.Create()) {
 		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);
@@ -269,6 +322,8 @@ int main(int argc, char* argv[]) {
 		return put(&stream, argv[2], argv[3]);
 	} else if (strcmp("desc", argv[1]) == 0) {
 		return desc(&stream, argv[2]);
+	} else if (strcmp("del", argv[1]) == 0) {
+		return del(&stream, argv[2]);
 	} else {
 		plog::v(LOG_ERROR "client", "Unknown command: %s", argv[1]);
 		return EXIT_FAILURE;
