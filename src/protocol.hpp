@@ -131,7 +131,7 @@ namespace protocol {
 
 		private:
 			void _to(std::stringstream& out) const {
-				out << msg;
+				out.write(msg, length);
 			}
 
 			void _from(const char*& in) {

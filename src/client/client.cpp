@@ -51,16 +51,18 @@ static int get(void* _stream, const uid::uid_type& id) {
 		}
 		const char* req = _req.get();
 
+		if (head.command != protocol::status::SUCCESS) {
+			protocol::types::error err;
+			err.from(req);
+			plog::v(LOG_ERROR "get", "Error: %s", err.msg);
+			return -1;
+		}
+
 		// read response data
 		protocol::types::bigdata fdata;
 		fdata.from(req);
 
-		if (head.command == protocol::status::SUCCESS) {
-			plog::v(
-				LOG_INFO "get", "Received %u bytes: \"%s\"", fdata.length, req);
-		} else {
-			plog::v(LOG_ERROR "get", "Error: %s", req);
-		}
+		plog::v(LOG_INFO "get", "Received %u bytes: \"%s\"", fdata.length, req);
 	}
 	return 0;
 }
