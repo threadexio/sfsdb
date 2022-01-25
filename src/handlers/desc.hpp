@@ -23,16 +23,14 @@ namespace handlers {
 		plog::v(LOG_INFO "parser", "DESC command");
 
 		protocol::types::string fid;
-		if (protocol::get_type(req) != protocol::types::ids::STRING) {
-			plog::v(LOG_INFO "desc", "Wrong parameter type");
-			protocol::messages::error("Wrong parameter type").to(res);
+		if (auto err = protocol::get_type(req, fid)) {
+			plog::v(LOG_INFO "desc", err.msg);
+			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
-		} else {
-			fid.from(req);
-			if (fid.str == "") {
-				protocol::messages::error("Expected file id").to(res);
-				return HANDLER_ERROR;
-			}
+		}
+		if (fid.str == "") {
+			protocol::messages::error("Expected file id").to(res);
+			return HANDLER_ERROR;
 		}
 
 		storage::data_type fobj;
@@ -63,7 +61,7 @@ namespace handlers {
 			fname = r.Ok().name;
 		}
 
-		{ // Send the headers
+		{ // Send the response
 			std::stringstream tmp;
 
 			protocol::types::string(fname.c_str()).to(tmp);

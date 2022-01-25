@@ -159,11 +159,10 @@ static int put(void*			  _stream,
 
 		// Read response data
 		protocol::types::string fid;
-		if (protocol::get_type(req) != protocol::types::ids::STRING) {
+		if (protocol::get_type(req, fid)) {
 			plog::v(LOG_ERROR "client", "Expected file id");
 			return -1;
 		}
-		fid.from(req);
 
 		plog::v(LOG_NOTICE "put", "File id: %s", fid.str.c_str());
 
@@ -223,14 +222,14 @@ static int desc(void* _stream, const uid::uid_type& id) {
 
 		// Read the response data
 		protocol::types::string fname;
-		if (protocol::get_type(req) != protocol::types::ids::STRING) {
+		if (protocol::get_type(req, fname)) {
 			plog::v(LOG_ERROR "client", "Expected file name");
 			return -1;
 		}
 		fname.from(req);
 
 		protocol::types::integer fsize;
-		if (protocol::get_type(req) != protocol::types::ids::INTEGER) {
+		if (protocol::get_type(req, fsize)) {
 			plog::v(LOG_ERROR "client", "Expected file size");
 			return -1;
 		}

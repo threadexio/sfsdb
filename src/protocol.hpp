@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "common.hpp"
 #include "endian.hpp"
 
 namespace protocol {
@@ -14,17 +15,6 @@ namespace protocol {
 
 	using smallint_type = uint16_t;
 	using integer_type	= uint32_t;
-
-	/**
-	 * @brief Use this to check the type of the next header. Results can be
-	 * compared to types::ids or your own types.
-	 *
-	 * @param in
-	 * @return cmd_type
-	 */
-	inline cmd_type get_type(const char* in) {
-		return endian::net::to_hosts(*(cmd_type*)in);
-	}
 
 	namespace status {
 		constexpr cmd_type SUCCESS = 0;
@@ -43,10 +33,12 @@ namespace protocol {
 			constexpr cmd_type BIGDATA	= 6;
 		} // namespace ids
 
-		template <cmd_type _Type>
 		struct data {
 		public:
-			cmd_type  type	 = _Type;
+			cmd_type type =
+				ids::INVALID; // ! FIXME: to() and from() use ids::INVALID
+							  // ! instead of the overriden values by children,
+							  // ! Messages start with \x00\x00
 			size_type length = 0;
 
 			void to(std::stringstream& out) const {
@@ -75,7 +67,9 @@ namespace protocol {
 		 * @brief An empty type.
 		 *
 		 */
-		struct invalid : public data<ids::INVALID> {
+		struct invalid : public data {
+			cmd_type type = ids::INVALID;
+
 			static constexpr size_t SIZE = HEADER_SIZE;
 
 		private:
@@ -90,7 +84,8 @@ namespace protocol {
 		 * @brief Message header, does not encode any data.
 		 *
 		 */
-		struct header : public data<ids::HEADER> {
+		struct header : public data {
+			cmd_type type = ids::HEADER;
 			cmd_type command;
 
 			header() {
@@ -117,7 +112,9 @@ namespace protocol {
 		 * @brief Fixed-length string used for error messages.
 		 *
 		 */
-		struct error : public data<ids::ERROR> {
+		struct error : public data {
+			cmd_type type = ids::ERROR;
+
 			char msg[256];
 
 			error() {
@@ -145,7 +142,9 @@ namespace protocol {
 		 * @brief Small integer type (uint16).
 		 *
 		 */
-		struct smallint : public data<ids::SMALLINT> {
+		struct smallint : public data {
+			cmd_type type = ids::SMALLINT;
+
 			smallint_type val;
 
 			smallint() {
@@ -171,7 +170,9 @@ namespace protocol {
 		 * @brief Integer type (uint32).
 		 *
 		 */
-		struct integer : public data<ids::INTEGER> {
+		struct integer : public data {
+			cmd_type type = ids::INTEGER;
+
 			integer_type val;
 
 			integer() {
@@ -197,7 +198,9 @@ namespace protocol {
 		 * @brief Variable-length string.
 		 *
 		 */
-		struct string : public data<ids::STRING> {
+		struct string : public data {
+			cmd_type type = ids::STRING;
+
 			std::string str;
 
 			string() {
@@ -223,7 +226,9 @@ namespace protocol {
 		 * reading/writing of the data is left up to the caller.
 		 *
 		 */
-		struct bigdata : public data<ids::BIGDATA> {
+		struct bigdata : public data {
+			cmd_type type = ids::BIGDATA;
+
 			bigdata() {
 			}
 
@@ -257,6 +262,22 @@ namespace protocol {
 		// command given is not valid
 		constexpr cmd_type INVALID = UINT16_MAX - 1;
 	} // namespace commands
+
+	/**
+	 * @brief Use this to check the type of the next header.
+	 *
+	 * @param in Input buffer
+	 * @param expected Expected type (types::*)
+	 * @return Error - Error.no = 0, if expected type is found. Error.no =
+	 * [other type id], if expected type was not found.
+	 */
+	inline Error get_type(const char*& in, types::data& expected) {
+		auto next_type = endian::net::to_hosts(*(cmd_type*)in);
+		if (next_type != expected.type)
+			return Error(next_type, "Wrong parameter type");
+		expected.from(in);
+		return Error(0);
+	}
 
 	inline int parse(
 		const cmd_table&	 commands, // Table with commands

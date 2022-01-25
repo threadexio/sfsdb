@@ -78,14 +78,12 @@ int main() {
 				plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
 				continue;
 			}
+			const char* tmp1 = tmp;
 
-			if (protocol::get_type(tmp) != protocol::types::ids::HEADER) {
+			if (protocol::get_type(tmp1, head)) {
 				plog::v(LOG_WARNING "client", "Bad request");
 				continue;
 			}
-
-			const char* tmp1 = tmp;
-			head.from(tmp1);
 		}
 
 		std::unique_ptr<char[]> req(new char[head.length]);

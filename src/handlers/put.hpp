@@ -23,24 +23,22 @@ namespace handlers {
 		plog::v(LOG_INFO "parser", "PUT command");
 
 		protocol::types::string fname;
-		if (protocol::get_type(req) != protocol::types::ids::STRING) {
-			plog::v("put", "Wrong parameter type");
-			protocol::messages::error("Wrong parameter type").to(res);
+		Error					err;
+		if (auto err = protocol::get_type(req, fname)) {
+			plog::v("put", err.msg);
+			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
-		} else {
-			fname.from(req);
-			if (fname.str == "") {
-				protocol::messages::error("Expected file name").to(res);
-				return HANDLER_ERROR;
-			}
+		}
+		if (fname.str == "") {
+			protocol::messages::error("Expected file name").to(res);
+			return HANDLER_ERROR;
 		}
 
 		protocol::types::bigdata fdata;
-		if (protocol::get_type(req) != protocol::types::ids::BIGDATA) {
+		if (auto err = protocol::get_type(req, fdata)) {
 			protocol::messages::error("Wrong parameter type").to(res);
 			return HANDLER_ERROR;
 		}
-		fdata.from(req);
 
 		protocol::types::string fid;
 		if (auto r = vol.store(fname.str, req, fdata.length)) {

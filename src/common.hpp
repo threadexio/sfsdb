@@ -65,6 +65,9 @@ struct Error {
 	Error(int _errno) : no(_errno), msg(strerror(no)) {
 	}
 
+	Error(int _errno, const char* _msg) : no(_errno), msg(_msg) {
+	}
+
 	Error(Error&& other) noexcept {
 		no	= other.no;
 		msg = other.msg;
@@ -80,6 +83,6 @@ struct Error {
 	}
 
 	inline operator bool() {
-		return no == 0;
+		return no != 0;
 	}
 };

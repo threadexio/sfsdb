@@ -27,16 +27,14 @@ namespace handlers {
 		auto* stream = (stream_type*)arg;
 
 		protocol::types::string fid;
-		if (protocol::get_type(req) != protocol::types::ids::STRING) {
-			plog::v(LOG_INFO "get", "Wrong parameter type");
-			protocol::messages::error("Wrong parameter type").to(res);
+		if (auto err = protocol::get_type(req, fid)) {
+			plog::v(LOG_INFO "get", err.msg);
+			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
-		} else {
-			fid.from(req);
-			if (fid.str == "") {
-				protocol::messages::error("Expected file id").to(res);
-				return HANDLER_ERROR;
-			}
+		}
+		if (fid.str == "") {
+			protocol::messages::error("Expected file id").to(res);
+			return HANDLER_ERROR;
 		}
 
 		// Get file data object
@@ -95,6 +93,6 @@ namespace handlers {
 		munmap(fptr, fsize);
 		close(fd);
 
-		return HANDLER_SUCCESS;
+		return HANDLER_NO_SEND_RES;
 	}
 } // namespace handlers
