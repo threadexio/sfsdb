@@ -95,6 +95,22 @@ namespace volume {
 			else
 				return std::move(ret.Ok(storage::at(_id)));
 		}
+
+		/**
+		 * @brief Get mapping by it's id
+		 *
+		 * @param _id
+		 * @return Result<map::map_type, Error>
+		 */
+		inline Result<map::map_type, Error> get_mapping(
+			const uid::uid_type& _id) const {
+			Result<map::map_type, Error> ret;
+
+			if (auto r = map::by_id(_id))
+				return std::move(ret.Err(r.Err()));
+			else
+				return std::move(ret.Ok(r.Ok()));
+		}
 	};
 
 	/**

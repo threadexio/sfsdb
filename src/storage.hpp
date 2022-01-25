@@ -74,31 +74,35 @@ namespace storage {
 		inline Result<void*, Error> remove() {
 			Result<void*, Error> ret;
 			try {
-				std::filesystem::remove(STOR_DATA_DIR + dname);
+				std::filesystem::remove(fpath);
 				return std::move(ret.Ok(nullptr));
 			} catch (const std::filesystem::filesystem_error& e) {
 				return std::move(ret.Err(e.code().value()));
 			}
 		}
 
+		/**
+		 * @brief Get metadata regarding a file.
+		 *
+		 * @return Result<meta, Error>
+		 */
 		inline Result<meta, Error> details() {
 			Result<meta, Error> ret;
 
 			struct stat stbuf;
-			if (stat((STOR_DATA_DIR + dname).c_str(), &stbuf) < 0)
+			if (stat(fpath.c_str(), &stbuf) < 0)
 				return std::move(ret.Err(errno));
 
 			return std::move(ret.Ok(stbuf));
 		}
 
 		/**
-		 * @brief Get a the file data stream.
+		 * @brief Get the file data stream.
 		 *
 		 * @return std::fstream
 		 */
 		inline std::fstream get() {
-			return std::fstream(STOR_DATA_DIR + dname,
-								std::ios::in | std::ios::binary);
+			return std::fstream(fpath, std::ios::in | std::ios::binary);
 		}
 
 		/**

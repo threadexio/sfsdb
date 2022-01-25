@@ -40,7 +40,7 @@ static int get(void* _stream, const uid::uid_type& id) {
 		}
 
 		if (head.type != protocol::types::ids::HEADER) {
-			plog::v(LOG_ERROR "server", "Bad response");
+			plog::v(LOG_ERROR "client", "Bad response");
 			return -1;
 		}
 
@@ -136,12 +136,11 @@ static int put(void*			  _stream,
 			head.from(tmp);
 
 			if (head.type != protocol::types::ids::HEADER) {
-				plog::v(LOG_ERROR "server", "Bad response");
+				plog::v(LOG_ERROR "client", "Bad response");
 				return -1;
 			}
 		}
 
-		// Read response data
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
 		if (auto r = stream->read(_req.get(), head.length)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
@@ -156,9 +155,10 @@ static int put(void*			  _stream,
 			return -1;
 		}
 
+		// Read response data
 		protocol::types::string fid;
 		if (protocol::get_type(req) != protocol::types::ids::STRING) {
-			plog::v(LOG_ERROR "server", "Wrong data type");
+			plog::v(LOG_ERROR "client", "Expected file id");
 			return -1;
 		}
 		fid.from(req);
@@ -167,6 +167,79 @@ static int put(void*			  _stream,
 
 		return 0;
 	}
+}
+
+static int desc(void* _stream, const uid::uid_type& id) {
+	auto* stream = (nio::base::stream<sockaddr>*)_stream;
+
+	{
+		std::stringstream tmp;
+
+		protocol::types::header(
+			3, protocol::types::string::HEADER_SIZE + id.length())
+			.to(tmp);
+		protocol::types::string(id.c_str()).to(tmp);
+
+		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+			plog::v(LOG_ERROR "net", "Cannnot write: %s", r.Err().msg);
+			return r.Err().no;
+		}
+	}
+
+	{
+		// Read message header
+		protocol::types::header head;
+		{
+			char buf[protocol::types::header::SIZE];
+			if (auto r = stream->read(buf, sizeof(buf))) {
+				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
+				return r.Err().no;
+			}
+
+			const char* tmp = buf;
+			head.from(tmp);
+
+			if (head.type != protocol::types::ids::HEADER) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+		}
+
+		std::unique_ptr<char[]> _req(new char[head.length + 1]);
+		if (auto r = stream->read(_req.get(), head.length)) {
+			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
+			return r.Err().no;
+		}
+		const char* req = _req.get();
+
+		if (head.command != protocol::status::SUCCESS) {
+			protocol::types::error err;
+			err.from(req);
+			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
+			return -1;
+		}
+
+		// Read the response data
+		protocol::types::string fname;
+		if (protocol::get_type(req) != protocol::types::ids::STRING) {
+			plog::v(LOG_ERROR "client", "Expected file name");
+			return -1;
+		}
+		fname.from(req);
+
+		protocol::types::integer fsize;
+		if (protocol::get_type(req) != protocol::types::ids::INTEGER) {
+			plog::v(LOG_ERROR "client", "Expected file size");
+			return -1;
+		}
+		fsize.from(req);
+
+		plog::v(LOG_NOTICE "client",
+				"Name: %s, Size: %u",
+				fname.str.c_str(),
+				fsize.val);
+	}
+	return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -194,6 +267,8 @@ int main(int argc, char* argv[]) {
 		return get(&stream, argv[2]);
 	} else if (strcmp("put", argv[1]) == 0) {
 		return put(&stream, argv[2], argv[3]);
+	} else if (strcmp("desc", argv[1]) == 0) {
+		return desc(&stream, argv[2]);
 	} else {
 		plog::v(LOG_ERROR "client", "Unknown command: %s", argv[1]);
 		return EXIT_FAILURE;

@@ -30,7 +30,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceRoot}/build/src/client",
-			"args": ["0000efbe-0000-0000-e31e-c06d0940"],
+			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],

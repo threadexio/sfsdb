@@ -103,7 +103,7 @@ int main() {
 		// The handler is expected to return HANDLER_ERROR and set the desired
 		// response in res if there is an error and the response isn't sent from
 		// the handler
-		if (result == HANDLER_ERROR) {
+		if (result != HANDLER_NO_SEND_RES) {
 			if (auto r = stream.write(res.str().c_str(), res.str().length())) {
 				plog::v(LOG_WARNING "net", "Cannot write: %s", r.Err().msg);
 				continue;
