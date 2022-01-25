@@ -33,12 +33,9 @@ namespace protocol {
 			constexpr cmd_type BIGDATA	= 6;
 		} // namespace ids
 
-		struct data {
+		class data {
 		public:
-			cmd_type type =
-				ids::INVALID; // ! FIXME: to() and from() use ids::INVALID
-							  // ! instead of the overriden values by children,
-							  // ! Messages start with \x00\x00
+			cmd_type  type	 = ids::INVALID;
 			size_type length = 0;
 
 			void to(std::stringstream& out) const {
@@ -67,8 +64,11 @@ namespace protocol {
 		 * @brief An empty type.
 		 *
 		 */
-		struct invalid : public data {
-			cmd_type type = ids::INVALID;
+		class invalid : public data {
+		public:
+			invalid() {
+				type = ids::INVALID;
+			}
 
 			static constexpr size_t SIZE = HEADER_SIZE;
 
@@ -84,16 +84,18 @@ namespace protocol {
 		 * @brief Message header, does not encode any data.
 		 *
 		 */
-		struct header : public data {
-			cmd_type type = ids::HEADER;
+		class header : public data {
+		public:
 			cmd_type command;
 
 			header() {
+				type = ids::HEADER;
 			}
 
 			header(cmd_type _command, size_type _length) {
-				command = _command;
+				type	= ids::HEADER;
 				length	= _length;
+				command = _command;
 			}
 
 			static constexpr size_t SIZE = HEADER_SIZE + sizeof(command);
@@ -112,18 +114,31 @@ namespace protocol {
 		 * @brief Fixed-length string used for error messages.
 		 *
 		 */
-		struct error : public data {
-			cmd_type type = ids::ERROR;
-
+		class error : public data {
+		public:
 			char msg[256];
 
 			error() {
+				type = ids::ERROR;
 			}
 
 			error(const char* _msg) {
+				type   = ids::ERROR;
 				length = strnlen(_msg, sizeof(msg) - 1);
 				strncpy(msg, _msg, length);
 				msg[sizeof(msg) - 1] = 0;
+			}
+
+			error& operator=(const char* e) {
+				length = strnlen(e, sizeof(msg) - 1);
+				strncpy(msg, e, length);
+				return *this;
+			}
+
+			error& operator=(const std::string& e) {
+				length = e.length();
+				strncpy(msg, e.c_str(), length);
+				return *this;
 			}
 
 		private:
@@ -142,16 +157,22 @@ namespace protocol {
 		 * @brief Small integer type (uint16).
 		 *
 		 */
-		struct smallint : public data {
-			cmd_type type = ids::SMALLINT;
-
+		class smallint : public data {
+		public:
 			smallint_type val;
 
 			smallint() {
+				type = ids::SMALLINT;
 			}
 
 			smallint(smallint_type _val) : val(_val) {
+				type   = ids::SMALLINT;
 				length = sizeof(val);
+			}
+
+			smallint& operator=(smallint_type other) {
+				val = other;
+				return *this;
 			}
 
 			static constexpr size_t SIZE = HEADER_SIZE + sizeof(val);
@@ -170,16 +191,22 @@ namespace protocol {
 		 * @brief Integer type (uint32).
 		 *
 		 */
-		struct integer : public data {
-			cmd_type type = ids::INTEGER;
-
+		class integer : public data {
+		public:
 			integer_type val;
 
 			integer() {
+				type = ids::INTEGER;
 			}
 
 			integer(integer_type _val) : val(_val) {
+				type   = ids::INTEGER;
 				length = sizeof(val);
+			}
+
+			integer& operator=(integer_type other) {
+				val = other;
+				return *this;
 			}
 
 			static constexpr size_t SIZE = HEADER_SIZE + sizeof(val);
@@ -198,16 +225,29 @@ namespace protocol {
 		 * @brief Variable-length string.
 		 *
 		 */
-		struct string : public data {
-			cmd_type type = ids::STRING;
-
+		class string : public data {
+		public:
 			std::string str;
 
 			string() {
+				type = ids::STRING;
 			}
 
 			string(const char* _str) : str(_str) {
+				type   = ids::STRING;
 				length = str.length();
+			}
+
+			string& operator=(const char* e) {
+				str	   = e;
+				length = str.length();
+				return *this;
+			}
+
+			string& operator=(const std::string& e) {
+				str	   = e;
+				length = str.length();
+				return *this;
 			}
 
 		private:
@@ -226,13 +266,14 @@ namespace protocol {
 		 * reading/writing of the data is left up to the caller.
 		 *
 		 */
-		struct bigdata : public data {
-			cmd_type type = ids::BIGDATA;
-
+		class bigdata : public data {
+		public:
 			bigdata() {
+				type = ids::BIGDATA;
 			}
 
 			bigdata(size_type _length) {
+				type   = ids::BIGDATA;
 				length = _length;
 			}
 

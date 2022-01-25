@@ -30,7 +30,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceRoot}/build/src/client",
-			"args": [],
+			"args": ["put", "test", "/etc/hosts"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],

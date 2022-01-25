@@ -33,15 +33,17 @@ static int get(void* _stream, const uid::uid_type& id) {
 		// Read message header
 		protocol::types::header head;
 		{
-			char tmp[protocol::types::header::SIZE];
-			stream->read(tmp, sizeof(tmp), MSG_WAITALL);
-			const char* tmp1 = tmp;
-			head.from(tmp1);
-		}
+			char buf[protocol::types::header::SIZE];
+			if (auto r = stream->read(buf, sizeof(buf))) {
+				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
+				return r.Err().no;
+			}
+			const char* tmp = buf;
 
-		if (head.type != protocol::types::ids::HEADER) {
-			plog::v(LOG_ERROR "client", "Bad response");
-			return -1;
+			if (auto err = protocol::get_type(tmp, head)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
@@ -53,14 +55,21 @@ static int get(void* _stream, const uid::uid_type& id) {
 
 		if (head.command != protocol::status::SUCCESS) {
 			protocol::types::error err;
-			err.from(req);
-			plog::v(LOG_ERROR "get", "Error: %s", err.msg);
+			if (protocol::get_type(req, err)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+
+			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
 			return -1;
 		}
 
 		// read response data
 		protocol::types::bigdata fdata;
-		fdata.from(req);
+		if (protocol::get_type(req, fdata)) {
+			plog::v(LOG_ERROR "client", "Expected file data");
+			return -1;
+		}
 
 		plog::v(LOG_INFO "get", "Received %u bytes: \"%s\"", fdata.length, req);
 	}
@@ -133,11 +142,9 @@ static int put(void*			  _stream,
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
-
 			const char* tmp = buf;
-			head.from(tmp);
 
-			if (head.type != protocol::types::ids::HEADER) {
+			if (protocol::get_type(tmp, head)) {
 				plog::v(LOG_ERROR "client", "Bad response");
 				return -1;
 			}
@@ -152,7 +159,11 @@ static int put(void*			  _stream,
 
 		if (head.command != protocol::status::SUCCESS) {
 			protocol::types::error err;
-			err.from(req);
+			if (protocol::get_type(req, err)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+
 			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
 			return -1;
 		}
@@ -196,11 +207,9 @@ static int desc(void* _stream, const uid::uid_type& id) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
-
 			const char* tmp = buf;
-			head.from(tmp);
 
-			if (head.type != protocol::types::ids::HEADER) {
+			if (auto err = protocol::get_type(tmp, head)) {
 				plog::v(LOG_ERROR "client", "Bad response");
 				return -1;
 			}
@@ -215,7 +224,11 @@ static int desc(void* _stream, const uid::uid_type& id) {
 
 		if (head.command != protocol::status::SUCCESS) {
 			protocol::types::error err;
-			err.from(req);
+			if (protocol::get_type(req, err)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+
 			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
 			return -1;
 		}
@@ -226,14 +239,12 @@ static int desc(void* _stream, const uid::uid_type& id) {
 			plog::v(LOG_ERROR "client", "Expected file name");
 			return -1;
 		}
-		fname.from(req);
 
 		protocol::types::integer fsize;
 		if (protocol::get_type(req, fsize)) {
 			plog::v(LOG_ERROR "client", "Expected file size");
 			return -1;
 		}
-		fsize.from(req);
 
 		plog::v(LOG_NOTICE "client",
 				"Name: %s, Size: %u",
@@ -269,11 +280,9 @@ static int del(void* _stream, const uid::uid_type& id) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
-
 			const char* tmp = buf;
-			head.from(tmp);
 
-			if (head.type != protocol::types::ids::HEADER) {
+			if (protocol::get_type(tmp, head)) {
 				plog::v(LOG_ERROR "client", "Bad response");
 				return -1;
 			}
@@ -288,10 +297,15 @@ static int del(void* _stream, const uid::uid_type& id) {
 
 		if (head.command != protocol::status::SUCCESS) {
 			protocol::types::error err;
-			err.from(req);
+			if (protocol::get_type(req, err)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+
 			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
 			return -1;
 		}
+
 		return 0;
 	}
 }

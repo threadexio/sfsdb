@@ -46,7 +46,7 @@ namespace handlers {
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else {
-			fid.str = r.Ok();
+			fid = r.Ok();
 		}
 
 		// Send response
