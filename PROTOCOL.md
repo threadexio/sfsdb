@@ -46,7 +46,7 @@ All types are prepended with another header, which is the **data header**. The s
 
 The order that the fields are encoded is: `type` -> `length`
 
-``
+```
           type    length
            \/       \/
 00000000: 0002 | 0000 000f                           ......

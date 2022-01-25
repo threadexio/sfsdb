@@ -169,8 +169,13 @@ static int put(void*			  _stream,
 	}
 }
 
-int main(int, char* argv[]) {
-	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
+int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " command [command args...]\n";
+		return EXIT_FAILURE;
+	}
+
+	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
 
 	if (auto r = cli.Create()) {
 		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);
@@ -185,8 +190,14 @@ int main(int, char* argv[]) {
 	} else
 		stream = r.Ok();
 
-	get(&stream, argv[1]);
-	// put(&stream, argv[1], argv[2]);
+	if (strcmp("get", argv[1]) == 0) {
+		return get(&stream, argv[2]);
+	} else if (strcmp("put", argv[1]) == 0) {
+		return put(&stream, argv[2], argv[3]);
+	} else {
+		plog::v(LOG_ERROR "client", "Unknown command: %s", argv[1]);
+		return EXIT_FAILURE;
+	}
 
 	return 0;
 }
