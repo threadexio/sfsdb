@@ -310,6 +310,82 @@ static int del(void* _stream, const uid::uid_type& id) {
 	}
 }
 
+static int list(void* _stream, const std::string& filename) {
+	auto* stream = (nio::base::stream<sockaddr>*)_stream;
+
+	{
+		// Send the command
+		std::stringstream		tmp;
+		protocol::types::string fname(filename.c_str());
+		protocol::types::header head(
+			5, protocol::types::string::HEADER_SIZE + fname.length);
+
+		head.to(tmp);
+		fname.to(tmp);
+
+		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+			plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
+			return r.Err().no;
+		}
+	}
+
+	// Read response
+	{
+		// Read message header
+		protocol::types::header head;
+		{
+			char buf[protocol::types::header::SIZE];
+			if (auto r = stream->read(buf, sizeof(buf))) {
+				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
+				return r.Err().no;
+			}
+			const char* tmp = buf;
+
+			if (auto err = protocol::get_type(tmp, head)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+		}
+
+		std::unique_ptr<char[]> _req(new char[head.length + 1]);
+		if (auto r = stream->read(_req.get(), head.length)) {
+			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
+			return r.Err().no;
+		}
+		const char* req = _req.get();
+
+		if (head.command != protocol::status::SUCCESS) {
+			protocol::types::error err;
+			if (protocol::get_type(req, err)) {
+				plog::v(LOG_ERROR "client", "Bad response");
+				return -1;
+			}
+
+			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
+			return -1;
+		}
+
+		// read response data
+		protocol::types::smallint resultnum;
+		if (protocol::get_type(req, resultnum)) {
+			plog::v(LOG_ERROR "client", "Expected result number");
+			return -1;
+		}
+
+		plog::v(LOG_NOTICE "server", "Found %u results:", resultnum.val);
+		for (size_t i = 0; i < resultnum.val; i++) {
+			protocol::types::string fid;
+			if (protocol::get_type(req, fid)) {
+				plog::v(LOG_ERROR "client", "Unexpected end of results");
+				return -1;
+			}
+
+			plog::v(LOG_NOTICE "result", "%s", fid.str.c_str());
+		}
+	}
+	return 0;
+}
+
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " command [command args...]\n";
@@ -339,6 +415,8 @@ int main(int argc, char* argv[]) {
 		return desc(&stream, argv[2]);
 	} else if (strcmp("del", argv[1]) == 0) {
 		return del(&stream, argv[2]);
+	} else if (strcmp("list", argv[1]) == 0) {
+		return list(&stream, argv[2]);
 	} else {
 		plog::v(LOG_ERROR "client", "Unknown command: %s", argv[1]);
 		return EXIT_FAILURE;
