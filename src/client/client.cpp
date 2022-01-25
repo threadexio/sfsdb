@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
+	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
 
 	if (auto r = cli.Create()) {
 		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);
