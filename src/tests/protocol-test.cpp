@@ -40,48 +40,42 @@ TEST_CASE("protocol tests", "[main]") {
 		std::string sdec_str = senc.str();
 		auto*		sdec	 = sdec_str.c_str();
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::INVALID);
+		protocol::types::invalid invalid;
+		REQUIRE(protocol::get_type(sdec, invalid).no == 0);
 		LOG_BUFFER(sdec, protocol::types::invalid::SIZE);
-		protocol::types::invalid().from(sdec);
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::HEADER);
-		LOG_BUFFER(sdec, protocol::types::header::SIZE);
 		protocol::types::header header;
-		header.from(sdec);
+		REQUIRE(protocol::get_type(sdec, header).no == 0);
+		LOG_BUFFER(sdec, protocol::types::header::SIZE);
 		REQUIRE(header.command == 23);
 		REQUIRE(header.length == 123456789);
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::ERROR);
+		protocol::types::error err;
+		REQUIRE(protocol::get_type(sdec, err).no == 0);
 		LOG_BUFFER(
 			sdec,
 			protocol::types::error::HEADER_SIZE + strlen("Test error message"));
-		protocol::types::error err;
-		err.from(sdec);
 		REQUIRE(strcmp(err.msg, "Test error message") == 0);
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::SMALLINT);
-		LOG_BUFFER(sdec, protocol::types::smallint::SIZE);
 		protocol::types::smallint smallint;
-		smallint.from(sdec);
+		REQUIRE(protocol::get_type(sdec, smallint).no == 0);
+		LOG_BUFFER(sdec, protocol::types::smallint::SIZE);
 		REQUIRE(smallint.val == 1234);
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::INTEGER);
-		LOG_BUFFER(sdec, protocol::types::integer::SIZE);
 		protocol::types::integer integer;
-		integer.from(sdec);
+		REQUIRE(protocol::get_type(sdec, integer).no == 0);
+		LOG_BUFFER(sdec, protocol::types::integer::SIZE);
 		REQUIRE(integer.val == 5678);
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::STRING);
+		protocol::types::string str;
+		REQUIRE(protocol::get_type(sdec, str).no == 0);
 		LOG_BUFFER(
 			sdec, protocol::types::string::HEADER_SIZE + strlen("Test string"));
-		protocol::types::string str;
-		str.from(sdec);
 		REQUIRE(str.str == "Test string");
 
-		REQUIRE(protocol::get_type(sdec) == protocol::types::ids::BIGDATA);
-		LOG_BUFFER(sdec, protocol::types::bigdata::HEADER_SIZE);
 		protocol::types::bigdata bigdata;
-		bigdata.from(sdec);
+		REQUIRE(protocol::get_type(sdec, bigdata).no == 0);
+		LOG_BUFFER(sdec, protocol::types::bigdata::HEADER_SIZE);
 		REQUIRE(bigdata.length == 9999);
 	}
 }

@@ -97,6 +97,9 @@ TEST_CASE("volume tests", "[main]") {
 		for (size_t i = 0; i < SIZE(testfiles); i++) {
 			if (auto r = vol.remove(testfiles[i].id))
 				LOG_ERROR(r.Err().msg)
+
+			REQUIRE(
+				! std::filesystem::exists(storage::DATA_DIR + testfiles[i].id));
 		}
 	}
 }
