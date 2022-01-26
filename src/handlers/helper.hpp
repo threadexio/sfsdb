@@ -4,6 +4,7 @@
 #include "log.hpp"
 #include "messages.hpp"
 #include "misc.hpp"
+#include "nio/ip/stream.hpp"
 #include "volume.hpp"
 
 //==============//
@@ -19,5 +20,5 @@
 #include "nio/base/stream.hpp"
 
 namespace handlers {
-	using stream_type = nio::base::stream<sockaddr>;
+	using stream_type = nio::ip::stream;
 }

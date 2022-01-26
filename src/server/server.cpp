@@ -1,7 +1,6 @@
 #include "nio/ip/v4/server.hpp"
 
-#include <signal.h>
-
+#include <csignal>
 #include <iostream>
 #include <string>
 
@@ -29,9 +28,6 @@ int main() {
 		exit(r.Err().no);
 	} else
 		vol = r.Ok();
-
-	// Add a test file
-	vol.store("test 1", "rick astley", strlen("rick astley"));
 
 	// Setup network stuff
 	nio::ip::v4::server srv(nio::ip::v4::addr("127.0.0.1", 8888));
@@ -72,41 +68,40 @@ int main() {
 				stream.peer().ip().c_str(),
 				stream.peer().port());
 
-		// Read the message header
-		protocol::types::header head;
-		{
-			char tmp[protocol::types::header::SIZE];
-			if (auto r = stream.read(tmp, sizeof(tmp), MSG_WAITALL)) {
-				plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
-				continue;
+		// One client must be able to send multiple commands per connection
+		for (;;) {
+			// Read the message header
+			protocol::types::header head;
+			{
+				char tmp[protocol::types::header::SIZE];
+				if (auto r = stream.read(tmp, sizeof(tmp), MSG_WAITALL))
+					break;
+				const char* tmp1 = tmp;
+
+				if (protocol::get_type(tmp1, head)) {
+					plog::v(LOG_WARNING "client", "Bad request");
+					break;
+				}
 			}
-			const char* tmp1 = tmp;
 
-			if (protocol::get_type(tmp1, head)) {
-				plog::v(LOG_WARNING "client", "Bad request");
-				continue;
-			}
-		}
+			std::unique_ptr<char[]> req(new char[head.length]);
+			if (auto r = stream.read(req.get(), head.length, MSG_WAITALL))
+				break;
 
-		std::unique_ptr<char[]> req(new char[head.length]);
-		if (auto r = stream.read(req.get(), head.length, MSG_WAITALL)) {
-			plog::v(LOG_WARNING "net", "Cannot read: %s", r.Err().msg);
-			continue;
-		}
+			std::stringstream res;
 
-		std::stringstream res;
+			auto result =
+				protocol::parse(commands, head, req.get(), res, &stream);
 
-		auto result = protocol::parse(commands, head, req.get(), res, &stream);
+			plog::v(LOG_INFO "parser", "Handler status: %d", result);
 
-		plog::v(LOG_INFO "parser", "Handler status: %d", result);
-
-		// The handler is expected to return HANDLER_ERROR and set the desired
-		// response in res if there is an error and the response isn't sent from
-		// the handler
-		if (result != HANDLER_NO_SEND_RES) {
-			if (auto r = stream.write(res.str().c_str(), res.str().length())) {
-				plog::v(LOG_WARNING "net", "Cannot write: %s", r.Err().msg);
-				continue;
+			// The handler is expected to return HANDLER_ERROR and set the
+			// desired response in res if there is an error and the response
+			// isn't sent from the handler
+			if (result != HANDLER_NO_SEND_RES) {
+				if (auto r =
+						stream.write(res.str().c_str(), res.str().length()))
+					break;
 			}
 		}
 	}

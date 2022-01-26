@@ -1,17 +1,21 @@
 #include "nio/ip/v4/client.hpp"
 
+#include <csignal>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include "log.hpp"
 #include "misc.hpp"
+#include "nio/ip/stream.hpp"
 #include "protocol.hpp"
 #include "uid.hpp"
 
-static int get(void* _stream, const uid::uid_type& id) {
-	auto* stream = (nio::base::stream<sockaddr>*)_stream;
+static nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
+static nio::ip::v4::stream stream;
 
+static int get(const uid::uid_type& id) {
 	{
 		// Send the command
 		std::stringstream		tmp;
@@ -22,7 +26,7 @@ static int get(void* _stream, const uid::uid_type& id) {
 		head.to(tmp);
 		fid.to(tmp);
 
-		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+		if (auto r = stream.write(tmp.str().c_str(), tmp.str().length())) {
 			plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
 			return r.Err().no;
 		}
@@ -34,7 +38,7 @@ static int get(void* _stream, const uid::uid_type& id) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream->read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf))) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -47,7 +51,7 @@ static int get(void* _stream, const uid::uid_type& id) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream->read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -71,16 +75,17 @@ static int get(void* _stream, const uid::uid_type& id) {
 			return -1;
 		}
 
-		plog::v(LOG_INFO "get", "Received %u bytes: \"%s\"", fdata.length, req);
+		std::stringstream fcontent;
+		fcontent.write(req, fdata.length);
+		plog::v(LOG_INFO "get",
+				"Received %u bytes: \"%s\"",
+				fdata.length,
+				fcontent.str().c_str());
 	}
 	return 0;
 }
 
-static int put(void*			  _stream,
-			   const std::string& filename,
-			   const std::string& filepath) {
-	auto* stream = (nio::base::stream<sockaddr>*)_stream;
-
+static int put(const std::string& filename, const std::string& filepath) {
 	{
 		// Construct the command
 		std::stringstream tmp;
@@ -94,7 +99,15 @@ static int put(void*			  _stream,
 
 		std::fstream fstr(filepath,
 						  std::ios::in | std::ios::ate | std::ios::binary);
-		size_t		 filesize = fstr.tellg();
+		if (fstr.fail()) {
+			plog::v(LOG_ERROR "fs",
+					"Cannot read file %s: %s",
+					filepath.c_str(),
+					strerror(errno));
+			return -1;
+		}
+
+		size_t filesize = fstr.tellg();
 		fstr.seekg(0, std::ios::beg);
 
 		protocol::types::bigdata fdata(filesize);
@@ -104,8 +117,8 @@ static int put(void*			  _stream,
 		fname.to(tmp);
 		fdata.to(tmp);
 
-		if (auto r = stream->write(
-				tmp.str().c_str(), tmp.str().length(), MSG_MORE)) {
+		if (auto r =
+				stream.write(tmp.str().c_str(), tmp.str().length(), MSG_MORE)) {
 			plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
 			return r.Err().no;
 		}
@@ -119,7 +132,7 @@ static int put(void*			  _stream,
 
 			fstr.read(blk.get(), bytes_to_write);
 
-			if (auto r = stream->write(blk.get(), bytes_to_write, MSG_MORE)) {
+			if (auto r = stream.write(blk.get(), bytes_to_write, MSG_MORE)) {
 				plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -128,7 +141,7 @@ static int put(void*			  _stream,
 		}
 
 		// Finalize send
-		stream->write("", 0);
+		stream.write("", 0);
 	}
 
 	{
@@ -138,7 +151,7 @@ static int put(void*			  _stream,
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream->read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf))) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -151,7 +164,7 @@ static int put(void*			  _stream,
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream->read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -181,9 +194,7 @@ static int put(void*			  _stream,
 	}
 }
 
-static int desc(void* _stream, const uid::uid_type& id) {
-	auto* stream = (nio::base::stream<sockaddr>*)_stream;
-
+static int desc(const uid::uid_type& id) {
 	{
 		std::stringstream tmp;
 
@@ -192,7 +203,7 @@ static int desc(void* _stream, const uid::uid_type& id) {
 			.to(tmp);
 		protocol::types::string(id.c_str()).to(tmp);
 
-		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+		if (auto r = stream.write(tmp.str().c_str(), tmp.str().length())) {
 			plog::v(LOG_ERROR "net", "Cannnot write: %s", r.Err().msg);
 			return r.Err().no;
 		}
@@ -203,7 +214,7 @@ static int desc(void* _stream, const uid::uid_type& id) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream->read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf))) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -216,7 +227,7 @@ static int desc(void* _stream, const uid::uid_type& id) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream->read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -254,9 +265,7 @@ static int desc(void* _stream, const uid::uid_type& id) {
 	return 0;
 }
 
-static int del(void* _stream, const uid::uid_type& id) {
-	auto* stream = (nio::base::stream<sockaddr>*)_stream;
-
+static int del(const uid::uid_type& id) {
 	{
 		std::stringstream tmp;
 
@@ -265,7 +274,7 @@ static int del(void* _stream, const uid::uid_type& id) {
 			.to(tmp);
 		protocol::types::string(id.c_str()).to(tmp);
 
-		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+		if (auto r = stream.write(tmp.str().c_str(), tmp.str().length())) {
 			plog::v(LOG_ERROR "net", "Cannnot write: %s", r.Err().msg);
 			return r.Err().no;
 		}
@@ -276,7 +285,7 @@ static int del(void* _stream, const uid::uid_type& id) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream->read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf))) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -289,7 +298,7 @@ static int del(void* _stream, const uid::uid_type& id) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream->read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -310,9 +319,7 @@ static int del(void* _stream, const uid::uid_type& id) {
 	}
 }
 
-static int list(void* _stream, const std::string& filename) {
-	auto* stream = (nio::base::stream<sockaddr>*)_stream;
-
+static int list(const std::string& filename) {
 	{
 		// Send the command
 		std::stringstream		tmp;
@@ -323,7 +330,7 @@ static int list(void* _stream, const std::string& filename) {
 		head.to(tmp);
 		fname.to(tmp);
 
-		if (auto r = stream->write(tmp.str().c_str(), tmp.str().length())) {
+		if (auto r = stream.write(tmp.str().c_str(), tmp.str().length())) {
 			plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
 			return r.Err().no;
 		}
@@ -335,7 +342,7 @@ static int list(void* _stream, const std::string& filename) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream->read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf))) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -348,7 +355,7 @@ static int list(void* _stream, const std::string& filename) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream->read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -386,20 +393,33 @@ static int list(void* _stream, const std::string& filename) {
 	return 0;
 }
 
-int main(int argc, char* argv[]) {
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " command [command args...]\n";
-		return EXIT_FAILURE;
+static int quit() {
+	std::stringstream tmp;
+	protocol::types::header(6, 0).to(tmp);
+	if (auto r = stream.write(tmp.str().c_str(), tmp.str().length())) {
+		plog::v(LOG_ERROR "client", "Cannot write: %s", r.Err().msg);
+		stream.shutdown();
+		return -1;
 	}
+	stream.shutdown();
+	return 0;
+}
 
-	nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
+static void exit_handler(int sig) {
+	std::cout << "\n";
+	plog::v(LOG_INFO "client", "Exiting...");
+	quit();
+	exit(sig);
+}
+
+int main() {
+	signal(SIGINT, exit_handler);
+	signal(SIGTERM, exit_handler);
 
 	if (auto r = cli.Create()) {
 		plog::v(LOG_ERROR "net", "Cannot create socket: %s", r.Err().msg);
 		exit(r.Err().no);
 	}
-
-	nio::ip::v4::stream stream;
 
 	if (auto r = cli.Connect()) {
 		plog::v(LOG_ERROR "net", "Cannot connect: %s", r.Err().msg);
@@ -407,19 +427,79 @@ int main(int argc, char* argv[]) {
 	} else
 		stream = r.Ok();
 
-	if (strcmp("get", argv[1]) == 0) {
-		return get(&stream, argv[2]);
-	} else if (strcmp("put", argv[1]) == 0) {
-		return put(&stream, argv[2], argv[3]);
-	} else if (strcmp("desc", argv[1]) == 0) {
-		return desc(&stream, argv[2]);
-	} else if (strcmp("del", argv[1]) == 0) {
-		return del(&stream, argv[2]);
-	} else if (strcmp("list", argv[1]) == 0) {
-		return list(&stream, argv[2]);
-	} else {
-		plog::v(LOG_ERROR "client", "Unknown command: %s", argv[1]);
-		return EXIT_FAILURE;
+	// Main shell loop
+	std::string prompt =
+		stream.peer().ip() + ":" + std::to_string(stream.peer().port()) + " > ";
+
+	std::string input;
+	while (true) {
+		std::cout << prompt;
+
+		// Ctrl + D
+		if (! std::getline(std::cin, input)) {
+			exit_handler(0);
+		}
+
+		if (input == "")
+			continue;
+
+		std::vector<std::string> args;
+
+		std::string		  arg;
+		std::stringstream tmp {input};
+		while (std::getline(tmp, arg, ' ')) {
+			if (arg != "")
+				args.push_back(arg);
+		}
+
+		std::string command = args[0];
+		// shift the args, so args[0] is the first command parameter
+		args.erase(args.begin());
+
+		if (command == "GET") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "GET [file id]");
+			else
+				get(args[0]);
+		} else if (command == "PUT") {
+			if (args.size() != 2)
+				plog::v(LOG_NOTICE "Usage", "PUT [file name] [file path]");
+			else
+				put(args[0], args[1]);
+		} else if (command == "DESC") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "DESC [file id]");
+			else
+				desc(args[0]);
+		} else if (command == "DEL") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "DEL [file id]");
+			else
+				del(args[0]);
+		} else if (command == "LIST") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "LIST [file name]");
+			else
+				list(args[0]);
+		} else if (command == "QUIT") {
+			exit_handler(0);
+		} else if (command == "HELP") {
+			plog::v(LOG_INFO "Commands", "");
+			plog::v(
+				LOG_NOTICE "GET",
+				"\tGet remote file contents from server and print to console");
+			plog::v(LOG_NOTICE "PUT", "\tPut local file to server");
+			plog::v(LOG_NOTICE "DESC", "\tGet details about remote file");
+			plog::v(LOG_NOTICE "DEL", "\tDelete a remote file");
+			plog::v(LOG_NOTICE "LIST", "\tList all files with filename");
+			plog::v(LOG_NOTICE "QUIT", "\tClose the current connection");
+			plog::v(LOG_NOTICE "HELP", "\tThis help message");
+		} else {
+			plog::v(
+				LOG_WARNING "client",
+				"Unknown command: \"%s\". Type \"HELP\" for a list of commands",
+				command.c_str());
+		}
 	}
 
 	return 0;
