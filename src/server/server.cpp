@@ -1,8 +1,10 @@
 #include "nio/ip/v4/server.hpp"
 
+#include <chrono>
 #include <csignal>
-#include <iostream>
+#include <future>
 #include <string>
+#include <thread>
 
 #include "handlers.hpp"
 #include "log.hpp"
@@ -10,12 +12,63 @@
 #include "protocol.hpp"
 #include "volume.hpp"
 
-static void exit_handler(int sig) {
-	plog::v(LOG_INFO "handler", "Exit signal detected. Exiting...");
-	exit(sig);
+static int con_handler(nio::ip::stream&& _clstream) {
+	// One client must be able to send multiple commands per
+	// connection
+	auto clstream = _clstream;
+
+	for (;;) {
+		// Read the message header
+		protocol::types::header head;
+		{
+			char tmp[protocol::types::header::SIZE];
+			if (auto r = clstream.read(tmp, sizeof(tmp), MSG_WAITALL))
+				break;
+			const char* tmp1 = tmp;
+
+			if (protocol::get_type(tmp1, head)) {
+				plog::v(LOG_WARNING "client", "Bad request");
+				break;
+			}
+		}
+
+		std::unique_ptr<char[]> req(new char[head.length]);
+		if (auto r = clstream.read(req.get(), head.length, MSG_WAITALL))
+			break;
+
+		std::stringstream res;
+
+		auto result =
+			protocol::parse(commands, head, req.get(), res, (void*)&clstream);
+
+		plog::v(LOG_INFO "parser", "Handler status: %d", result);
+
+		// The handler is expected to return HANDLER_ERROR and set
+		// the desired response in res if there is an error and the
+		// response isn't sent from the handler
+		if (result != HANDLER_NO_SEND_RES) {
+			if (auto r = clstream.write(res.str().c_str(), res.str().length()))
+				break;
+		}
+	}
+
+	return 0;
 }
 
 volume::volume_type vol;
+
+static std::vector<std::thread> thread_pool;
+static std::vector<int>			stream_fds;
+
+static void exit_handler(int sig) {
+	plog::v(
+		LOG_INFO "handler",
+		"Exit signal detected. Waiting for %d active connections to close...",
+		thread_pool.size());
+	// ! FIXME: Find some way to alert the other thread to return.
+	for (auto& t : thread_pool) { t.join(); }
+	exit(sig);
+}
 
 int main() {
 	// Register signal handlers for graceful exits
@@ -54,56 +107,25 @@ int main() {
 
 	// Main loop
 	for (;;) {
-		nio::ip::v4::stream stream;
+		nio::ip::v4::stream s;
 		if (auto r = srv.Accept()) {
 			plog::v(LOG_WARNING "net", "Cannot accept: %s", r.Err().msg);
-			continue;
+			return -1;
 		} else
-			stream = r.Ok();
+			s = r.Ok();
 
 		plog::v("", "--------------------");
 
 		plog::v(LOG_INFO "net",
 				"Connected: %s:%zu",
-				stream.peer().ip().c_str(),
-				stream.peer().port());
+				s.peer().ip().c_str(),
+				s.peer().port());
 
-		// One client must be able to send multiple commands per connection
-		for (;;) {
-			// Read the message header
-			protocol::types::header head;
-			{
-				char tmp[protocol::types::header::SIZE];
-				if (auto r = stream.read(tmp, sizeof(tmp), MSG_WAITALL))
-					break;
-				const char* tmp1 = tmp;
+		stream_fds.push_back(s.raw());
 
-				if (protocol::get_type(tmp1, head)) {
-					plog::v(LOG_WARNING "client", "Bad request");
-					break;
-				}
-			}
-
-			std::unique_ptr<char[]> req(new char[head.length]);
-			if (auto r = stream.read(req.get(), head.length, MSG_WAITALL))
-				break;
-
-			std::stringstream res;
-
-			auto result =
-				protocol::parse(commands, head, req.get(), res, &stream);
-
-			plog::v(LOG_INFO "parser", "Handler status: %d", result);
-
-			// The handler is expected to return HANDLER_ERROR and set the
-			// desired response in res if there is an error and the response
-			// isn't sent from the handler
-			if (result != HANDLER_NO_SEND_RES) {
-				if (auto r =
-						stream.write(res.str().c_str(), res.str().length()))
-					break;
-			}
-		}
+		//! FIXME: This is astronomically bad. Race conditions for file accesses
+		//! are a thing. Please fix
+		thread_pool.push_back(std::thread(con_handler, std::move(s)));
 	}
 	return 0;
 }

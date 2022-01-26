@@ -13,7 +13,7 @@ file(GLOB HANDLER_SRC "handlers/*.cpp")
 add_library(main OBJECT ${SRC})
 
 add_executable(server ${HANDLER_SRC} server/server.cpp)
-target_link_libraries(server main NioStatic)
+target_link_libraries(server main NioStatic pthread)
 
 add_executable(client client/client.cpp)
 target_link_libraries(client main NioStatic)
