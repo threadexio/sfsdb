@@ -41,8 +41,10 @@ int main() {
 		exit(r.Err().no);
 	}
 
-	int enable = 1;
-	setsockopt(srv.raw(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+	if (auto r = srv.set_opt(nio::SOPT::REUSE_ADDRESS, &nio::ENABLE)) {
+		plog::v(LOG_ERROR "net", "Cannot set opt: %s", r.Err().msg);
+		exit(r.Err().no);
+	}
 
 	if (auto r = srv.Bind()) {
 		plog::v(LOG_ERROR "net", "Cannot bind socket: %s", r.Err().msg);
