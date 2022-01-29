@@ -1,40 +1,42 @@
 #include "map.hpp"
 
 #include <filesystem>
-#include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "common.hpp"
+#include "flstream.hpp"
 #include "uid.hpp"
 
 namespace map {
 	map_type::map_type(const std::string& _name) {
 		name = _name;
 
-		std::fstream name_file(NAME_DIR + name, std::ios::in);
+		flstream name_file((NAME_DIR + name).c_str(), flstream::RDONLY);
 
 		if (name_file.fail())
 			return;
 
+		name_file.lock(flstream::ltype::READ);
+
 		// Parse the file into the vector "ids"
 		std::string chunk;
 		// The format is <UID><separator>
-		while (std::getline(name_file, chunk, SEPARATOR))
-			ids.emplace_back(chunk);
-
-		name_file.close();
+		// while (std::getline(name_file, chunk, SEPARATOR))
+		while (name_file.getline(chunk, SEPARATOR)) ids.emplace_back(chunk);
 	}
 
 	Result<uid::uid_type, Error> map_type::create() {
 		Result<uid::uid_type, Error> ret;
 
-		std::fstream name_file(NAME_DIR + name, std::ios::out | std::ios::app);
+		flstream name_file((NAME_DIR + name).c_str(),
+						   flstream::WRONLY | flstream::CREAT);
 
-		// TODO: Some actual error handling here
 		if (name_file.fail())
 			return std::move(ret.Err(errno));
+
+		name_file.lock(flstream::ltype::WRITE);
 
 		auto id = uid::generator().get();
 
@@ -49,10 +51,16 @@ namespace map {
 		name_file.write(out.c_str(), out.length());
 		name_file.close();
 
-		std::fstream id_file(ID_DIR + id, std::ios::out | std::ios::trunc);
+		flstream id_file((ID_DIR + id).c_str(),
+						 flstream::WRONLY | flstream::CREAT | flstream::TRUNC);
+
+		if (name_file.fail())
+			return std::move(ret.Err(errno));
+
+		id_file.lock(flstream::ltype::WRITE);
+
 		id_file.write((name + SEPARATOR).c_str(),
 					  name.length() + SEPARATOR_LEN);
-		id_file.close();
 
 		// Add the id to our vector so it is synced up with the changes
 		ids.emplace_back(id);
@@ -68,10 +76,12 @@ namespace map {
 				ret.Err(ENOENT)); // No such file or directory, interpret this
 								  // as "mid does not exist"
 
-		std::fstream name_file(NAME_DIR + name, std::ios::in);
+		flstream name_file((NAME_DIR + name).c_str(), flstream::RDWR);
 
 		if (name_file.fail())
 			return std::move(ret.Err(errno));
+
+		name_file.lock(flstream::ltype::READ);
 
 		// Determines whether the file will be empty after we delete the given
 		// uid. We only set it to false if we find data that has to be written
@@ -80,7 +90,8 @@ namespace map {
 
 		std::string buf;
 		std::string chunk;
-		while (std::getline(name_file, chunk, SEPARATOR)) {
+		// while (std::getline(name_file, chunk, SEPARATOR)) {
+		while (name_file.getline(chunk, SEPARATOR)) {
 			if (chunk == mid)
 				continue;
 
@@ -92,10 +103,10 @@ namespace map {
 		name_file.close();
 
 		if (! empty) { // If we don't have data to write to it, just delete it
-			name_file =
-				std::fstream(NAME_DIR + name, std::ios::out | std::ios::trunc);
+			name_file = flstream((NAME_DIR + name).c_str(),
+								 flstream::WRONLY | flstream::TRUNC);
+			name_file.lock(flstream::ltype::WRITE);
 			name_file.write(buf.c_str(), buf.length());
-			name_file.close();
 		} else {
 			std::filesystem::remove(NAME_DIR + name);
 		}
@@ -115,13 +126,15 @@ namespace map {
 	Result<map_type, Error> by_id(const uid::uid_type& _id) {
 		Result<map_type, Error> ret;
 
-		std::string	 _name;
-		std::fstream id_file(ID_DIR + _id, std::ios::in);
-		if (id_file.fail())
-			return std::move(ret.Err(errno));
+		std::string _name;
+		flstream	id_file((ID_DIR + _id).c_str(), flstream::RDONLY);
 
-		std::getline(id_file, _name, SEPARATOR);
-		id_file.close();
+		if (id_file.fail())
+			return std::move(ret.Err(id_file.error().no));
+
+		id_file.lock(flstream::ltype::READ);
+
+		id_file.getline(_name, SEPARATOR);
 
 		return std::move(ret.Ok(std::move(_name)));
 	}

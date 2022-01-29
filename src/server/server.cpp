@@ -1,5 +1,7 @@
 #include "nio/ip/v4/server.hpp"
 
+#include <sched.h>
+
 #include <chrono>
 #include <csignal>
 #include <future>
@@ -57,16 +59,7 @@ static int con_handler(nio::ip::stream&& _clstream) {
 
 volume::volume_type vol;
 
-static std::vector<std::thread> thread_pool;
-static std::vector<int>			stream_fds;
-
 static void exit_handler(int sig) {
-	plog::v(
-		LOG_INFO "handler",
-		"Exit signal detected. Waiting for %d active connections to close...",
-		thread_pool.size());
-	// ! FIXME: Find some way to alert the other thread to return.
-	for (auto& t : thread_pool) { t.join(); }
 	exit(sig);
 }
 
@@ -114,18 +107,18 @@ int main() {
 		} else
 			s = r.Ok();
 
-		plog::v("", "--------------------");
-
 		plog::v(LOG_INFO "net",
 				"Connected: %s:%zu",
 				s.peer().ip().c_str(),
 				s.peer().port());
 
-		stream_fds.push_back(s.raw());
-
-		//! FIXME: This is astronomically bad. Race conditions for file accesses
-		//! are a thing. Please fix
-		thread_pool.push_back(std::thread(con_handler, std::move(s)));
+		pid_t child = fork();
+		if (child == -1) {
+			plog::v(LOG_ERROR "net", "Cannot fork: %s", strerror(errno));
+			continue;
+		} else if (child == 0) {
+			return con_handler(std::move(s));
+		}
 	}
 	return 0;
 }

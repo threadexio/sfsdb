@@ -12,7 +12,7 @@
 #include "protocol.hpp"
 #include "uid.hpp"
 
-static nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
+static nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
 static nio::ip::v4::stream stream;
 
 static int get(const uid::uid_type& id) {
@@ -38,7 +38,7 @@ static int get(const uid::uid_type& id) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream.read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf), MSG_WAITALL)) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -51,7 +51,7 @@ static int get(const uid::uid_type& id) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream.read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length, MSG_WAITALL)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -132,6 +132,8 @@ static int put(const std::string& filename, const std::string& filepath) {
 
 			fstr.read(blk.get(), bytes_to_write);
 
+			sleep(2);
+
 			if (auto r = stream.write(blk.get(), bytes_to_write, MSG_MORE)) {
 				plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
 				return r.Err().no;
@@ -151,7 +153,7 @@ static int put(const std::string& filename, const std::string& filepath) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream.read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf), MSG_WAITALL)) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -164,7 +166,7 @@ static int put(const std::string& filename, const std::string& filepath) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream.read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length, MSG_WAITALL)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -214,7 +216,7 @@ static int desc(const uid::uid_type& id) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream.read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf), MSG_WAITALL)) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -227,7 +229,7 @@ static int desc(const uid::uid_type& id) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream.read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length, MSG_WAITALL)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
@@ -285,7 +287,7 @@ static int del(const uid::uid_type& id) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream.read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf), MSG_WAITALL)) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -297,25 +299,24 @@ static int del(const uid::uid_type& id) {
 			}
 		}
 
+		if (head.command == protocol::status::SUCCESS)
+			return 0;
+
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream.read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length, MSG_WAITALL)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}
 		const char* req = _req.get();
 
-		if (head.command != protocol::status::SUCCESS) {
-			protocol::types::error err;
-			if (protocol::get_type(req, err)) {
-				plog::v(LOG_ERROR "client", "Bad response");
-				return -1;
-			}
-
-			plog::v(LOG_ERROR "server", "Error: %s", err.msg);
+		protocol::types::error err;
+		if (protocol::get_type(req, err)) {
+			plog::v(LOG_ERROR "client", "Bad response");
 			return -1;
 		}
 
-		return 0;
+		plog::v(LOG_ERROR "server", "Error: %s", err.msg);
+		return -1;
 	}
 }
 
@@ -342,7 +343,7 @@ static int list(const std::string& filename) {
 		protocol::types::header head;
 		{
 			char buf[protocol::types::header::SIZE];
-			if (auto r = stream.read(buf, sizeof(buf))) {
+			if (auto r = stream.read(buf, sizeof(buf), MSG_WAITALL)) {
 				plog::v(LOG_ERROR "net", "Cannnot read: %s", r.Err().msg);
 				return r.Err().no;
 			}
@@ -355,7 +356,7 @@ static int list(const std::string& filename) {
 		}
 
 		std::unique_ptr<char[]> _req(new char[head.length + 1]);
-		if (auto r = stream.read(_req.get(), head.length)) {
+		if (auto r = stream.read(_req.get(), head.length, MSG_WAITALL)) {
 			plog::v(LOG_ERROR "net", "Cannot read: %s", r.Err().no);
 			return r.Err().no;
 		}

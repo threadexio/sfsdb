@@ -3,10 +3,10 @@
 #include <sys/stat.h>
 
 #include <filesystem>
-#include <fstream>
 #include <string>
 
 #include "common.hpp"
+#include "flstream.hpp"
 
 #define STOR_DATA_DIR "data/"
 
@@ -33,15 +33,7 @@ namespace storage {
 	 * @brief Create directory structure @ cwd.
 	 *
 	 */
-	inline Result<void*, Error> init() {
-		Result<void*, Error> ret;
-		try {
-			std::filesystem::create_directory(STOR_DATA_DIR);
-			return std::move(ret.Ok(nullptr));
-		} catch (const std::filesystem::filesystem_error& e) {
-			return std::move(ret.Err(e.code().value()));
-		}
-	}
+	Result<void*, Error> init();
 
 	struct data_type {
 	private:
@@ -57,7 +49,9 @@ namespace storage {
 		 *
 		 * @param _dname
 		 */
-		data_type(const std::string& _dname);
+		data_type(const std::string& _dname)
+			: dname(_dname), fpath(DATA_DIR + dname) {
+		}
 
 		/**
 		 * @brief Save data in the object. Will overwrite previous data!
@@ -71,39 +65,14 @@ namespace storage {
 		 * @brief Remove the current data.
 		 *
 		 */
-		inline Result<void*, Error> remove() {
-			Result<void*, Error> ret;
-			try {
-				std::filesystem::remove(fpath);
-				return std::move(ret.Ok(nullptr));
-			} catch (const std::filesystem::filesystem_error& e) {
-				return std::move(ret.Err(e.code().value()));
-			}
-		}
+		Result<void*, Error> remove();
 
 		/**
 		 * @brief Get metadata regarding a file.
 		 *
 		 * @return Result<meta, Error>
 		 */
-		inline Result<meta, Error> details() {
-			Result<meta, Error> ret;
-
-			struct stat stbuf;
-			if (stat(fpath.c_str(), &stbuf) < 0)
-				return std::move(ret.Err(errno));
-
-			return std::move(ret.Ok(stbuf));
-		}
-
-		/**
-		 * @brief Get the file data stream.
-		 *
-		 * @return std::fstream
-		 */
-		inline std::fstream get() {
-			return std::fstream(fpath, std::ios::in | std::ios::binary);
-		}
+		Result<meta, Error> details();
 
 		/**
 		 * @brief Get file path.

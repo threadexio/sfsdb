@@ -1,6 +1,5 @@
 #pragma once
 #include <filesystem>
-#include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,7 +22,7 @@ namespace map {
 		std::string				   name;
 		std::vector<uid::uid_type> ids;
 
-		map_type() = default;
+		map_type() {};
 
 		map_type(const std::string& _name);
 

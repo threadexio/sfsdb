@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cerrno>
 #include <cstring>
 
 #define UNUSED(x) (void)x
@@ -62,7 +63,8 @@ struct Error {
 
 	Error() {};
 
-	Error(int _errno) : no(_errno), msg(strerror(no)) {
+	Error(int _errno) {
+		set(_errno);
 	}
 
 	Error(int _errno, const char* _msg) : no(_errno), msg(_msg) {
@@ -82,7 +84,16 @@ struct Error {
 		return *this;
 	}
 
-	inline operator bool() {
+	inline operator bool() const {
 		return no != 0;
+	}
+
+	void set(int _errno) {
+		no	= _errno;
+		msg = strerror(no);
+	}
+
+	void last() {
+		set(errno);
 	}
 };
