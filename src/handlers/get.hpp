@@ -38,7 +38,7 @@ namespace handlers {
 		}
 
 		// Get file data object
-		storage::data_type file;
+		storage::object file;
 		if (auto r = vol.get_id(fid.str)) {
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
@@ -56,7 +56,7 @@ namespace handlers {
 			fsize = r.Ok().size;
 
 		// Send the file data to the client
-		int fd = open(file.path().c_str(), O_RDONLY);
+		int fd = open(file.data_path.c_str(), O_RDONLY);
 		if (fd < 0) {
 			plog::v(LOG_ERROR "fs", "Cannot open file: %s", Error(errno).msg);
 			protocol::messages::error(Error(errno).msg).to(res);

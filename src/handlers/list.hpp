@@ -35,11 +35,17 @@ namespace handlers {
 		}
 
 		{ // Send the response
-			std::stringstream tmp;
-			auto			  fobj = vol.get_name(fname.str);
+			std::stringstream		   tmp;
+			std::vector<uid::uid_type> ids;
 
-			protocol::types::smallint(fobj.ids.size()).to(tmp);
-			for (auto &id : fobj.ids) {
+			if (auto r = vol.get_name(fname.str)) {
+				protocol::messages::error(r.Err().msg).to(res);
+				return HANDLER_ERROR;
+			} else
+				ids = r.Ok();
+
+			protocol::types::smallint(ids.size()).to(tmp);
+			for (auto &id : ids) {
 				protocol::types::string(id.c_str()).to(tmp);
 			}
 

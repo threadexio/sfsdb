@@ -10,7 +10,7 @@ namespace handlers {
 		/**
 		 * Command format:
 		 *
-		 * LIST [file name]
+		 * QUIT [file name]
 		 *
 		 * Binary format:
 		 *

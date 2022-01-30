@@ -33,7 +33,7 @@ namespace handlers {
 			return HANDLER_ERROR;
 		}
 
-		storage::data_type fobj;
+		storage::object fobj;
 		if (auto r = vol.get_id(fid.str)) {
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
@@ -54,7 +54,7 @@ namespace handlers {
 		}
 
 		std::string fname;
-		if (auto r = vol.get_mapping(fid.str)) {
+		if (auto r = vol.get_id(fid.str)) {
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else {

@@ -5,7 +5,6 @@
 #include <string>
 
 #include "common.hpp"
-#include "map.hpp"
 #include "storage.hpp"
 #include "uid.hpp"
 
@@ -35,13 +34,24 @@ namespace volume {
 			Result<uid::uid_type, Error> ret;
 
 			uid::uid_type id = "";
-			if (auto r = map::by_name(_name).create())
+			if (auto r = storage::create(_name))
 				return std::move(ret.Err(r.Err()));
 			else
 				id = r.Ok();
 
-			if (auto r = storage::at(id).save(_data, _len))
+			storage::object obj;
+			if (auto r = storage::object::by_id(id))
 				return std::move(ret.Err(r.Err()));
+			else
+				obj = r.Ok();
+
+			flstream stream;
+			if (auto r = obj.get(flstream::WRONLY))
+				return std::move(ret.Err(r.Err()));
+			else
+				stream = r.Ok();
+
+			stream.write(_data, _len);
 
 			return std::move(ret.Ok(std::move(id)));
 		}
@@ -57,15 +67,12 @@ namespace volume {
 			Result<void*, Error> ret;
 
 			// Nested error checking, this is the way
-			if (auto r = map::by_id(_id))
+			if (auto r = storage::object::by_id(_id))
 				return std::move(ret.Err(r.Err()));
 			else {
-				if (auto r1 = r.Ok().remove(_id))
+				if (auto r1 = r.Ok().remove())
 					return std::move(ret.Err(r1.Err()));
 			}
-
-			if (auto r = storage::at(_id).remove())
-				return std::move(ret.Err(r.Err()));
 
 			return std::move(ret.Ok(nullptr));
 		}
@@ -76,8 +83,8 @@ namespace volume {
 		 * @param _name
 		 * @return map::map_type
 		 */
-		inline map::map_type get_name(const std::string& _name) {
-			return map::by_name(_name);
+		inline auto get_name(const std::string& _name) {
+			return storage::object::by_name(_name);
 		}
 
 		/**
@@ -86,32 +93,19 @@ namespace volume {
 		 * @param _id
 		 * @return storage::data_type
 		 */
-		inline Result<storage::data_type, Error> get_id(
-			const uid::uid_type& _id) const {
-			Result<storage::data_type, Error> ret;
+		inline auto get_id(const uid::uid_type& _id) const {
+			Result<storage::object, Error> ret;
 
-			if (auto r = map::by_id(_id))
+			if (auto r = storage::object::by_id(_id))
 				return std::move(ret.Err(r.Err()));
-			else
-				return std::move(ret.Ok(storage::at(_id)));
+			else {
+				if (auto r1 = storage::object::by_id(_id))
+					return std::move(ret.Err(r1.Err()));
+				else
+					return std::move(ret.Ok(r1.Ok()));
+			}
 		}
-
-		/**
-		 * @brief Get mapping by it's id
-		 *
-		 * @param _id
-		 * @return Result<map::map_type, Error>
-		 */
-		inline Result<map::map_type, Error> get_mapping(
-			const uid::uid_type& _id) const {
-			Result<map::map_type, Error> ret;
-
-			if (auto r = map::by_id(_id))
-				return std::move(ret.Err(r.Err()));
-			else
-				return std::move(ret.Ok(r.Ok()));
-		}
-	};
+	}; // namespace volume
 
 	/**
 	 * @brief Initialize the volume in root and cd there.
@@ -126,9 +120,6 @@ namespace volume {
 		} catch (const std::filesystem::filesystem_error& e) {
 			return std::move(ret.Err(e.code().value()));
 		}
-
-		if (auto r = map::init())
-			return std::move(ret.Err(r.Err()));
 
 		if (auto r = storage::init())
 			return std::move(ret.Err(r.Err()));

@@ -132,8 +132,6 @@ static int put(const std::string& filename, const std::string& filepath) {
 
 			fstr.read(blk.get(), bytes_to_write);
 
-			sleep(2);
-
 			if (auto r = stream.write(blk.get(), bytes_to_write, MSG_MORE)) {
 				plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
 				return r.Err().no;
