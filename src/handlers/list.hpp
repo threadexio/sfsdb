@@ -21,8 +21,6 @@ namespace handlers {
 		UNUSED(head);
 		UNUSED(arg);
 
-		plog::v(LOG_INFO "parser", "LIST command");
-
 		protocol::types::string fname;
 		if (auto err = protocol::get_type(req, fname)) {
 			protocol::messages::error(err.msg).to(res);

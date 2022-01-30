@@ -12,7 +12,7 @@
 #include "protocol.hpp"
 #include "uid.hpp"
 
-static nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8889));
+static nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
 static nio::ip::v4::stream stream;
 
 static int get(const uid::uid_type& id) {

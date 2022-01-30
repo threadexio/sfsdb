@@ -10,7 +10,6 @@ namespace handlers {
 		UNUSED(req);
 		UNUSED(arg);
 
-		plog::v("invalid", "Invalid command");
 		return HANDLER_NO_SEND_RES;
 	}
 } // namespace handlers

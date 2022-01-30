@@ -20,11 +20,8 @@ namespace handlers {
 		UNUSED(head);
 		UNUSED(arg);
 
-		plog::v(LOG_INFO "parser", "DESC command");
-
 		protocol::types::string fid;
 		if (auto err = protocol::get_type(req, fid)) {
-			plog::v(LOG_INFO "desc", err.msg);
 			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
 		}
@@ -43,10 +40,7 @@ namespace handlers {
 
 		storage::meta mdata;
 		if (auto r = fobj.details()) {
-			plog::v(LOG_ERROR "fs",
-					"Cannot stat %s: %s",
-					fid.str.c_str(),
-					r.Err().msg);
+			plog::v(LOG_ERROR "fs", "stat: %s", fid.str.c_str(), r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else {

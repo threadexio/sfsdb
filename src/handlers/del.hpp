@@ -20,11 +20,8 @@ namespace handlers {
 		UNUSED(head);
 		UNUSED(arg);
 
-		plog::v(LOG_INFO "parser", "DEL command");
-
 		protocol::types::string fid;
 		if (auto err = protocol::get_type(req, fid)) {
-			plog::v(LOG_INFO "del", err.msg);
 			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
 		}
@@ -34,7 +31,7 @@ namespace handlers {
 		}
 
 		if (auto r = vol.remove(fid.str)) {
-			plog::v(LOG_ERROR "fs", "Cannot remove file: %s", r.Err().msg);
+			plog::v(LOG_ERROR "fs", "remove: %s", r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		}

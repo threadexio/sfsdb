@@ -23,8 +23,6 @@ namespace handlers {
 		UNUSED(req);
 		UNUSED(res);
 
-		plog::v(LOG_INFO "parser", "QUIT command");
-
 		auto* stream = (stream_type*)arg;
 
 		stream->shutdown();

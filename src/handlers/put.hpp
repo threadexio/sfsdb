@@ -20,12 +20,9 @@ namespace handlers {
 		UNUSED(head);
 		UNUSED(arg);
 
-		plog::v(LOG_INFO "parser", "PUT command");
-
 		protocol::types::string fname;
 		Error					err;
 		if (auto err = protocol::get_type(req, fname)) {
-			plog::v("put", err.msg);
 			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
 		}
@@ -42,7 +39,7 @@ namespace handlers {
 
 		protocol::types::string fid;
 		if (auto r = vol.store(fname.str, req, fdata.length)) {
-			plog::v(LOG_ERROR "fs", "Cannot store file: %s", r.Err().msg);
+			plog::v(LOG_ERROR "fs", "store: %s", r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else {

@@ -22,13 +22,10 @@ namespace handlers {
 		 */
 		UNUSED(head);
 
-		plog::v(LOG_INFO "parser", "GET command");
-
 		auto* stream = (stream_type*)arg;
 
 		protocol::types::string fid;
 		if (auto err = protocol::get_type(req, fid)) {
-			plog::v(LOG_INFO "get", err.msg);
 			protocol::messages::error(err.msg).to(res);
 			return HANDLER_ERROR;
 		}
@@ -48,8 +45,7 @@ namespace handlers {
 		// Get file size
 		uint32_t fsize;
 		if (auto r = file.details()) {
-			plog::v(
-				LOG_WARNING "fs", "Cannot get file details: %s", r.Err().msg);
+			plog::v(LOG_WARNING "fs", "stat: %s", r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else
@@ -58,7 +54,7 @@ namespace handlers {
 		// Send the file data to the client
 		int fd = open(file.data_path.c_str(), O_RDONLY);
 		if (fd < 0) {
-			plog::v(LOG_ERROR "fs", "Cannot open file: %s", Error(errno).msg);
+			plog::v(LOG_ERROR "fs", "open: %s", Error(errno).msg);
 			protocol::messages::error(Error(errno).msg).to(res);
 			return HANDLER_ERROR;
 		}
@@ -67,7 +63,6 @@ namespace handlers {
 		void* fptr =
 			mmap(NULL, fsize, PROT_READ, MAP_PRIVATE | MAP_STACK, fd, 0);
 		if (fptr == MAP_FAILED) {
-			plog::v(LOG_ERROR "fs", "Cannot map file: %s", Error(errno).msg);
 			protocol::messages::error(Error(errno).msg).to(res);
 			return HANDLER_ERROR;
 		}

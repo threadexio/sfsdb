@@ -17,7 +17,7 @@
 
 //==============//
 
-#include "nio/base/stream.hpp"
+#include "nio/ip/stream.hpp"
 
 namespace handlers {
 	using stream_type = nio::ip::stream;
