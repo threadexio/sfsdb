@@ -71,25 +71,34 @@ TEST_CASE("volume tests", "[main]") {
 		for (size_t i = 0; i < SIZE(testfiles); i++) {
 			memset(buf, 0, 4096);
 
-			storage::data_type fobj;
+			storage::object obj;
 			if (auto r = vol.get_id(testfiles[i].id))
 				LOG_ERROR(r.Err().msg)
 			else
-				fobj = r.Ok();
+				obj = r.Ok();
 
 			storage::meta metadata;
-			if (auto r = fobj.details())
+			if (auto r = obj.details())
 				LOG_ERROR(r.Err().msg)
 			else
 				metadata = r.Ok();
 
-			fobj.get().read(buf, 4095);
+			flstream stream;
+			if (auto r = obj.get(flstream::RDONLY)) {
+				LOG_ERROR(r.Err().msg);
+			} else
+				stream = r.Ok();
+
+			stream.read(buf, 4095);
 			REQUIRE(strcmp(buf, testfiles[i].fdata) == 0);
 		}
 	}
 
 	SECTION("Test search by filename", "[main]") {
-		REQUIRE(vol.get_name("file_dup").ids.size() > 1);
+		if (auto r = vol.get_name("file_dup")) {
+			LOG_ERROR(r.Err().msg);
+		} else
+			REQUIRE(r.Ok().size() > 1);
 	}
 
 	SECTION("Cleanup", "[main]") {
