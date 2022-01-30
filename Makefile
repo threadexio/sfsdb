@@ -41,4 +41,8 @@ build: FORCE
 clean:
 	@-rm -rf $(BUILD_DIR)
 
+.PHONY:
+tests:
+	./run_tests.sh
+
 FORCE: ;
