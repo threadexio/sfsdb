@@ -16,14 +16,8 @@ jobs:
       with:
         submodules: true
 
-    - name: Build Boost
-      id: boost
-      uses: egor-tensin/build-boost@v1
-      with:
-        version: 1.78.0
-        libraries: program_options
-        platform: x64
-        configuration: Release
+    - name: Install boost
+      run: sudo apt-get install -y libboost-program-options1.71.0
 
     - name: Build
       run: make BUILD_TYPE=Release BUILD_TESTS=y
