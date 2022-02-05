@@ -17,7 +17,7 @@ jobs:
         submodules: true
 
     - name: Install boost
-      run: sudo apt-get install -y libboost-program-options1.71.0-dev
+      run: sudo apt-get install -y libboost-program-options1.71-dev
 
     - name: Build
       run: make BUILD_TYPE=Release BUILD_TESTS=y
