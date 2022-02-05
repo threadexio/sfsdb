@@ -3,7 +3,7 @@ add_subdirectory(include/nio/)
 include_directories(include/nio/include/)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.78.0 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.71.0 COMPONENTS program_options REQUIRED)
 
 include_directories(./)
 
