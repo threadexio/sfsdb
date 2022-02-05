@@ -1,19 +1,32 @@
-name: Release build
+name: Run tests
 
 on:
-    push:
-        branches: [master]
-    pull_request:
-        branches: [master]
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
 
-        steps:
-            - uses: actions/checkout@v2
-              with:
-                submodules: true
+    runs-on: ubuntu-latest
 
-            - name: Build
-              run: make BUILD_TYPE=Release
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Build Boost
+      id: boost
+      uses: egor-tensin/build-boost@v1
+      with:
+        version: 1.78.0
+        libraries: program_options
+        platform: x64
+        configuration: Release
+
+    - name: Build
+      run: make BUILD_TYPE=Release BUILD_TESTS=y
+
+    - name: Run tests
+      run: make tests
