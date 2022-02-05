@@ -31,7 +31,7 @@ namespace handlers {
 		}
 
 		if (auto r = vol.remove(fid.str)) {
-			plog::v(LOG_ERROR "fs", "remove: %s", r.Err().msg);
+			plog::v(LOG_WARNING "fs", "remove: %s", r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		}

@@ -1,5 +1,6 @@
 #include "nio/ip/v4/client.hpp"
 
+#include <boost/program_options.hpp>
 #include <csignal>
 #include <fstream>
 #include <iostream>
@@ -12,7 +13,8 @@
 #include "protocol.hpp"
 #include "uid.hpp"
 
-static nio::ip::v4::client cli(nio::ip::v4::addr("127.0.0.1", 8888));
+namespace po = boost::program_options;
+
 static nio::ip::v4::stream stream;
 
 static int get(const uid::uid_type& id) {
@@ -411,7 +413,37 @@ static void exit_handler(int sig) {
 	exit(sig);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+	std::string ip;
+	int			port;
+
+	try {
+		po::options_description desc("Options");
+		desc.add_options()("help,h", "This help message")(
+			"ip,i",
+			po::value<std::string>(&ip)->default_value("127.0.0.1"),
+			"Server address")(
+			"port,p",
+			po::value<int>(&port)->default_value(DEFAULT_PORT),
+			"Port to connect to");
+
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+		po::notify(vm);
+
+		if (vm.count("help")) {
+			std::cout << "Usage " << argv[0] << " {flags} [volume path]\n\n"
+					  << desc << "\n";
+			return EXIT_SUCCESS;
+		}
+
+	} catch (const std::exception& e) {
+		plog::v(LOG_ERROR "arg_parser", "%s", e.what());
+		return EXIT_FAILURE;
+	}
+
+	nio::ip::v4::client cli(nio::ip::v4::addr(ip, port));
+
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
 

@@ -39,7 +39,7 @@ namespace handlers {
 
 		protocol::types::string fid;
 		if (auto r = vol.store(fname.str, req, fdata.length)) {
-			plog::v(LOG_ERROR "fs", "store: %s", r.Err().msg);
+			plog::v(LOG_WARNING "fs", "store: %s", r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else {

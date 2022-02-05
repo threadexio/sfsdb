@@ -40,7 +40,7 @@ namespace handlers {
 
 		storage::meta mdata;
 		if (auto r = fobj.details()) {
-			plog::v(LOG_ERROR "fs", "stat: %s", fid.str.c_str(), r.Err().msg);
+			plog::v(LOG_WARNING "fs", "stat: %s", fid.str.c_str(), r.Err().msg);
 			protocol::messages::error(r.Err().msg).to(res);
 			return HANDLER_ERROR;
 		} else {

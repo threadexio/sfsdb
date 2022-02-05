@@ -3,6 +3,7 @@
 #include <sched.h>
 #include <sys/wait.h>
 
+#include <boost/program_options.hpp>
 #include <chrono>
 #include <csignal>
 #include <string>
@@ -13,6 +14,8 @@
 #include "misc.hpp"
 #include "protocol.hpp"
 #include "volume.hpp"
+
+namespace po = boost::program_options;
 
 static int con_handler(nio::ip::stream&& _clstream) {
 	// One client must be able to send multiple commands per
@@ -42,8 +45,6 @@ static int con_handler(nio::ip::stream&& _clstream) {
 
 		auto result =
 			protocol::parse(commands, head, req.get(), res, (void*)&clstream);
-
-		plog::v(LOG_INFO "parser", "Handler status: %d", result);
 
 		// The handler is expected to return HANDLER_ERROR and set
 		// the desired response in res if there is an error and the
@@ -86,8 +87,40 @@ static void exit_handler(int sig) {
 }
 
 int main(int argc, char* argv[]) {
-	if (argc < 2) {
-		plog::v(LOG_NOTICE "Usage", "%s [volume path]", argv[0]);
+	std::string volume_path;
+	std::string ip;
+	int			port;
+
+	try {
+		po::options_description desc("Options");
+		desc.add_options()("help,h", "This help message")(
+			"ip,i",
+			po::value<std::string>(&ip)->default_value(DEFAULT_ADDR),
+			"Interface address to listen on")(
+			"port,p",
+			po::value<int>(&port)->default_value(DEFAULT_PORT),
+			"Port to listen on")("volume,v",
+								 po::value<std::string>(&volume_path),
+								 "Path to the volume");
+
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+		po::notify(vm);
+
+		if (! vm.count("volume")) {
+			std::cout << "Usage " << argv[0] << " {flags} [volume path]\n\n"
+					  << desc << "\n";
+			return EXIT_FAILURE;
+		}
+
+		if (vm.count("help")) {
+			std::cout << "Usage " << argv[0] << " {flags} [volume path]\n\n"
+					  << desc << "\n";
+			return EXIT_SUCCESS;
+		}
+
+	} catch (const std::exception& e) {
+		plog::v(LOG_ERROR "arg_parser", "%s", e.what());
 		return EXIT_FAILURE;
 	}
 
@@ -96,14 +129,14 @@ int main(int argc, char* argv[]) {
 	signal(SIGTERM, exit_handler);
 
 	// Setup the volume
-	if (auto r = volume::init(argv[1])) {
-		plog::v(LOG_ERROR "volume", "Initialization: %s", r.Err().msg);
+	if (auto r = volume::init(volume_path)) {
+		plog::v(LOG_ERROR "volume", "Init: %s", r.Err().msg);
 		exit(r.Err().no);
 	} else
 		vol = r.Ok();
 
 	// Setup network stuff
-	nio::ip::v4::addr	addr("127.0.0.1", 8888);
+	nio::ip::v4::addr	addr(ip, port);
 	nio::ip::v4::server srv(addr);
 
 	if (auto r = srv.Create()) {
@@ -147,7 +180,7 @@ int main(int argc, char* argv[]) {
 
 		pid_t child = fork();
 		if (child == -1) {
-			plog::v(LOG_ERROR "net", "fork: %s", strerror(errno));
+			plog::v(LOG_ERROR "sys", "fork: %s", strerror(errno));
 			continue;
 		} else if (child == 0) {
 			signal(SIGUSR1, child_exit_handler);

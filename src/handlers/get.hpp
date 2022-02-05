@@ -54,7 +54,7 @@ namespace handlers {
 		// Send the file data to the client
 		int fd = open(file.data_path.c_str(), O_RDONLY);
 		if (fd < 0) {
-			plog::v(LOG_ERROR "fs", "open: %s", Error(errno).msg);
+			plog::v(LOG_WARNING "fs", "open: %s", Error(errno).msg);
 			protocol::messages::error(Error(errno).msg).to(res);
 			return HANDLER_ERROR;
 		}
