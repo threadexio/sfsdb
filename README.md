@@ -23,6 +23,12 @@ A simple but powerful application to store large and small files.
 
 It uses volumes, which are basically any directory that files can be stored on. These volumes keep a track of the files uploaded by giving them unique time-based identifiers. Because volumes are just directories, it is possible to change the mount at that directory to alter the purpose of the software. For example, you could mount a `tmpfs` filesystem, with sufficient size, on the volume and have the server act as a file cache instead of long-term storage.
 
+# Usage
+
+All configuration can be done via command line parameters.
+
+A docker image is also available [here](https://hub.docker.com/r/thatrandomguy/sfsdb) built from the latest release.
+
 # Building
 
 As simple as:
