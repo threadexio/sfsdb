@@ -6,7 +6,7 @@ WORKDIR /mnt
 ARG VER
 RUN [ "make", "BUILD_TYPE=Release", "VERSION=${VER}", "clean", "all" ]
 
-FROM debian:stable-slim AS final
+FROM debian:stable-slim
 COPY --from=builder /mnt/build/src/sfsdb-server /usr/local/bin/sfsdb-server
 COPY --from=builder /mnt/build/src/sfsdb-cli /usr/local/bin/sfsdb-cli
 VOLUME [ "/data" ]

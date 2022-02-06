@@ -26,8 +26,7 @@ ifeq ($(BUILD_TESTS), y)
 endif
 
 .PHONY:
-all: #build
-	@echo ======= ${VERSION} ==========
+all: build
 
 .PHONY:
 .ONESHELL:
