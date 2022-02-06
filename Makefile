@@ -15,6 +15,8 @@ MAKEFLAGS += --no-print-directory
 
 #===============#
 
+VERSION ?= $(shell git log --format=%h -n1)
+
 BUILD_TESTS ?= n
 ifeq ($(BUILD_TESTS), y)
 	CMFLAGS += -DBUILD_TESTS:BOOL=ON
@@ -31,7 +33,7 @@ build: FORCE
 
 	@cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON \
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
-		-DCMAKE_CXX_FLAGS="$(CXXFLAGS) -Wall -Wextra" \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS) -Wall -Wextra -DVERSION='\"${VERSION}\"'" \
 		$(CMFLAGS) \
 		..
 

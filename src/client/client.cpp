@@ -434,7 +434,7 @@ int main(int argc, char* argv[]) {
 			"Server address")(
 			"port,p",
 			po::value<int>(&port)->default_value(DEFAULT_PORT),
-			"Port to connect to");
+			"Port to connect to")("version,V", "Print version");
 
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -442,6 +442,11 @@ int main(int argc, char* argv[]) {
 
 		if (vm.count("help")) {
 			std::cout << "Usage " << argv[0] << " {flags}\n\n" << desc << "\n";
+			return EXIT_SUCCESS;
+		}
+
+		if (vm.count("version")) {
+			plog::v(LOG_INFO "version", VERSION);
 			return EXIT_SUCCESS;
 		}
 

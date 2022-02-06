@@ -115,7 +115,6 @@ namespace volume {
 		Result<volume_type, Error> ret;
 
 		try {
-			std::filesystem::create_directory(root);
 			std::filesystem::current_path(root);
 		} catch (const std::filesystem::filesystem_error& e) {
 			return std::move(ret.Err(e.code().value()));

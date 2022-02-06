@@ -102,23 +102,22 @@ int main(int argc, char* argv[]) {
 			"Interface address to listen on")(
 			"port,p",
 			po::value<int>(&port)->default_value(DEFAULT_PORT),
-			"Port to listen on")("volume,v",
-								 po::value<std::string>(&volume_path),
-								 "Path to the volume");
+			"Port to listen on")(
+			"volume,v",
+			po::value<std::string>(&volume_path)->default_value("./"),
+			"Path to the volume")("version,V", "Print version");
 
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		po::notify(vm);
 
-		if (! vm.count("volume")) {
-			std::cout << "Usage " << argv[0] << " {flags} [volume path]\n\n"
-					  << desc << "\n";
-			return EXIT_FAILURE;
+		if (vm.count("version")) {
+			plog::v(LOG_INFO "version", VERSION);
+			return EXIT_SUCCESS;
 		}
 
 		if (vm.count("help")) {
-			std::cout << "Usage " << argv[0] << " {flags} [volume path]\n\n"
-					  << desc << "\n";
+			std::cout << "Usage " << argv[0] << " {flags}\n\n" << desc << "\n";
 			return EXIT_SUCCESS;
 		}
 
@@ -181,14 +180,14 @@ int main(int argc, char* argv[]) {
 				s.peer().ip().c_str(),
 				s.peer().port());
 
-		// pid_t child = fork();
-		// if (child == -1) {
-		//	plog::v(LOG_ERROR "sys", "fork: %s", strerror(errno));
-		//	continue;
-		// } else if (child == 0) {
-		// signal(SIGUSR1, child_exit_handler);
-		/*return*/ con_handler(std::move(s));
-		//}
+		pid_t child = fork();
+		if (child == -1) {
+			plog::v(LOG_ERROR "sys", "fork: %s", strerror(errno));
+			continue;
+		} else if (child == 0) {
+			signal(SIGUSR1, child_exit_handler);
+			return con_handler(std::move(s));
+		}
 	}
 	return 0;
 }
