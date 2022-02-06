@@ -6,12 +6,14 @@
 
 # sfsdb
 
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/threadexio/sfsdb/Run%20tests?logo=github&style=plastic)
+
 `S`imple
 `F`ile
 `S`torage
 `D`ata`B`ase
 
-A simple but powerful service to store large and small files.
+A simple but powerful application to store large and small files.
 
 # What's this?
 
@@ -19,7 +21,7 @@ A simple but powerful service to store large and small files.
 
 # How does it work?
 
-It uses volumes, which are basically any directory that files can be stored on. These volumes keep a track of the files uploaded by giving them unique identifiers time-based identifiers. Because volumes are just directories, it is possible to change the mount at that directory to alter the purpose of the software. For example, you could mount a `tmpfs` filesystem, with sufficient size, on the volume and have the server act as a file cache instead of long-term storage.
+It uses volumes, which are basically any directory that files can be stored on. These volumes keep a track of the files uploaded by giving them unique time-based identifiers. Because volumes are just directories, it is possible to change the mount at that directory to alter the purpose of the software. For example, you could mount a `tmpfs` filesystem, with sufficient size, on the volume and have the server act as a file cache instead of long-term storage.
 
 # Building
 
