@@ -18,9 +18,8 @@ namespace protocol {
 				err.to(out);
 			}
 
-			void from(const char*& in) {
-				head.from(in);
-				err.from(in);
+			bool from(const char*& in) {
+				return head.from(in) && err.from(in);
 			}
 		};
 	} // namespace messages

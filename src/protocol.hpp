@@ -10,6 +10,8 @@
 
 namespace protocol {
 
+	constexpr char MAGIC = 0xcc;
+
 	using cmd_type	= uint16_t;
 	using size_type = uint32_t;
 
@@ -44,15 +46,44 @@ namespace protocol {
 				_to(out);
 			}
 
-			void from(const char*& in) {
+			/**
+			 * @brief Parse the data stream into a usable format
+			 *
+			 * @param in
+			 * @return true - Data was parsed successfully
+			 * @return false - Data is invalid
+			 */
+			bool from(const char*& in) {
 				type   = endian::net::to_hosts(in);
 				length = endian::net::to_hostl(in);
-				_from(in);
+
+				switch (type) {
+					// We dont check headers
+					case ids::HEADER:
+						_from(in);
+						break;
+
+					// This must be checked manually
+					case ids::BIGDATA:
+						_from(in);
+						break;
+
+					default:
+						// Validate length, this is the default behavior
+						if (*(in + length) != MAGIC)
+							return false;
+						_from(in);
+						in++;
+						break;
+				}
+
+				return true;
 			}
 
-			// The sum of bytes of the 2 fields in data, this is only so we know
-			// how much to read.
-			static constexpr size_t HEADER_SIZE = sizeof(type) + sizeof(length);
+			// The sum of bytes of the 2 fields in data + 1 magic byte, this is
+			// only so we know how much to read.
+			static constexpr size_t HEADER_SIZE =
+				sizeof(type) + sizeof(length) + 1;
 
 		protected:
 			virtual void _to(std::stringstream& out) const = 0;
@@ -73,7 +104,8 @@ namespace protocol {
 			static constexpr size_t SIZE = HEADER_SIZE;
 
 		private:
-			void _to(std::stringstream&) const {
+			void _to(std::stringstream& out) const {
+				out << MAGIC;
 			}
 
 			void _from(const char*&) {
@@ -98,7 +130,9 @@ namespace protocol {
 				command = _command;
 			}
 
-			static constexpr size_t SIZE = HEADER_SIZE + sizeof(command);
+			static constexpr size_t SIZE =
+				HEADER_SIZE - 1 // headers dont have the magic byte at the end
+				+ sizeof(command);
 
 		private:
 			void _to(std::stringstream& out) const {
@@ -144,6 +178,7 @@ namespace protocol {
 		private:
 			void _to(std::stringstream& out) const {
 				out.write(msg, length);
+				out << MAGIC;
 			}
 
 			void _from(const char*& in) {
@@ -180,6 +215,7 @@ namespace protocol {
 		private:
 			void _to(std::stringstream& out) const {
 				endian::host::to_nets(out, val);
+				out << MAGIC;
 			}
 
 			void _from(const char*& in) {
@@ -214,6 +250,7 @@ namespace protocol {
 		private:
 			void _to(std::stringstream& out) const {
 				endian::host::to_netl(out, val);
+				out << MAGIC;
 			}
 
 			void _from(const char*& in) {
@@ -253,6 +290,7 @@ namespace protocol {
 		private:
 			void _to(std::stringstream& out) const {
 				out << str;
+				out << MAGIC;
 			}
 
 			void _from(const char*& in) {
@@ -316,7 +354,10 @@ namespace protocol {
 		auto next_type = endian::net::to_hosts(*(cmd_type*)in);
 		if (next_type != expected.type)
 			return Error(next_type, "Wrong parameter type");
-		expected.from(in);
+
+		if (! expected.from(in))
+			return Error(-1, "Invalid data format");
+
 		return Error(0);
 	}
 

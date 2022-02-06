@@ -31,8 +31,11 @@ static int con_handler(nio::ip::stream&& _clstream) {
 				break;
 			const char* tmp1 = tmp;
 
-			if (protocol::get_type(tmp1, head)) {
-				plog::v(LOG_WARNING "client", "Bad request");
+			if (auto err = protocol::get_type(tmp1, head)) {
+				plog::v(LOG_WARNING "client", "Bad request: %s", err.msg);
+				std::stringstream tmp;
+				protocol::messages::error(err.msg).to(tmp);
+				clstream.write(tmp.str().c_str(), tmp.str().length());
 				break;
 			}
 		}
@@ -178,14 +181,14 @@ int main(int argc, char* argv[]) {
 				s.peer().ip().c_str(),
 				s.peer().port());
 
-		pid_t child = fork();
-		if (child == -1) {
-			plog::v(LOG_ERROR "sys", "fork: %s", strerror(errno));
-			continue;
-		} else if (child == 0) {
-			signal(SIGUSR1, child_exit_handler);
-			return con_handler(std::move(s));
-		}
+		// pid_t child = fork();
+		// if (child == -1) {
+		//	plog::v(LOG_ERROR "sys", "fork: %s", strerror(errno));
+		//	continue;
+		// } else if (child == 0) {
+		// signal(SIGUSR1, child_exit_handler);
+		/*return*/ con_handler(std::move(s));
+		//}
 	}
 	return 0;
 }

@@ -33,7 +33,12 @@ namespace handlers {
 
 		protocol::types::bigdata fdata;
 		if (auto err = protocol::get_type(req, fdata)) {
-			protocol::messages::error("Wrong parameter type").to(res);
+			protocol::messages::error(err.msg).to(res);
+			return HANDLER_ERROR;
+		}
+
+		if (*(req + fdata.length) != protocol::MAGIC) {
+			protocol::messages::error("Invalid data format").to(res);
 			return HANDLER_ERROR;
 		}
 

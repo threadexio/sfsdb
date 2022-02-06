@@ -2,7 +2,7 @@
 
 | Version |
 | :-----: |
-|    1    |
+|   1.1   |
 
 This is a full description of the communication protocol used for the server and client.
 
@@ -23,7 +23,7 @@ If parsed correctly the protocol is binary-safe, meaning you can transport quite
 
 ## Structure
 
-The protocol consits of some basic types that are used to encode information.
+The protocol consits of some basic types that are used to encode information. After any type the magic byte `0xcc` must follow before encoding another type.
 
 | Type ID |    Type    |     Fields      | Field type  | Description                             |
 | :-----: | :--------: | :-------------: | :---------: | :-------------------------------------- |
@@ -66,7 +66,7 @@ For example, the above would be the data header for an error message (`type = 2`
 The byte representation is:
 
 ```
-00000000: 0000 0000 0000                           ......
+00000000: 0000 0000 0000 cc                         .......
 ```
 
 ---
@@ -78,12 +78,12 @@ The `HEADER` type is the start of every network message and it encodes the lengt
 **NOTE:** Depending on the sender, the `command` field can be used for 2 things:
 
 -   Command number (if sender is the client)
--   Status code (is sender is the server)
+-   Status code (if sender is the server)
 
 Byte representation for the header of a message that is 20 bytes long is:
 
 ```
-00000000: 0001 0000 0014 0000                      ........
+00000000: 0001 0000 0014 0000 cc                    .........
 ```
 
 ---
@@ -96,7 +96,7 @@ Byte representation for `"Test error message"`:
 
 ```
 00000000: 0002 0000 0012 5465 7374 2065 7272 6f72  ......Test error
-00000010: 206d 6573 7361 6765                       message
+00000010: 206d 6573 7361 6765 cc                    message.
 ```
 
 ---
@@ -108,7 +108,7 @@ A numeric type that encodes `uint16`. Must be converted to network endianess.
 Byte representation for `1234`:
 
 ```
-00000000: 0003 0000 0002 04d2                      ........
+00000000: 0003 0000 0002 04d2 cc                    .........
 ```
 
 ---
@@ -121,6 +121,7 @@ Byte representation for `5678`:
 
 ```
 00000000: 0004 0000 0004 0000 162e                 ..........
+00000010: cc                                       .
 ```
 
 ---
@@ -131,7 +132,7 @@ Byte representation for `"Test string"`:
 
 ```
 00000000: 0005 0000 000b 5465 7374 2073 7472 696e  ......Test strin
-00000010: 67                                       g
+00000010: 67cc                                     g.
 ```
 
 ---
@@ -140,7 +141,7 @@ Byte representation for `"Test string"`:
 
 A type that encodes large blobs of binary data. It is preferred over `STRING` even for large strings as it might be handled differently and more efficiently at the other endpoint. For example, a `STRING` might be read in one go and kept into memory for processing while `BIGDATA` might be read with multiple read calls and processed in chunks, thus leading to lower memory usage.
 
-This type does not have additional fields for information as it expects the caller to write that information themselves, it only encodes the length of that information.
+This type does not have additional fields for information as it expects the caller to write that information themselves, it only encodes the length of that information. Additionally the caller must remember to write the magic byte at the end.
 
 For this reason, the caller is also responsible for reading the data from the other endpoint when the parser encounters this type.
 
@@ -149,4 +150,5 @@ Byte representation for a buffer with `9999` bytes:
 ```
 00000000: 0006 0000 270f                           ....'.
 ... (9999 bytes)
+ffffffff: cc                                       .
 ```

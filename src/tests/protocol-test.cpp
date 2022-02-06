@@ -26,6 +26,7 @@ TEST_CASE("protocol tests", "[main]") {
 		protocol::types::integer(5678).to(senc);
 		protocol::types::string("Test string").to(senc);
 		protocol::types::bigdata(9999).to(senc);
+		senc << protocol::MAGIC;
 
 		// Check length
 		REQUIRE(

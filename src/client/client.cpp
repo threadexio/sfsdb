@@ -77,6 +77,9 @@ static int get(const uid::uid_type& id) {
 			return -1;
 		}
 
+		if (*(req + fdata.length) != protocol::MAGIC)
+			return -1;
+
 		std::stringstream fcontent;
 		fcontent.write(req, fdata.length);
 		plog::v(LOG_INFO "get",
@@ -140,6 +143,12 @@ static int put(const std::string& filename, const std::string& filepath) {
 			}
 
 			written_bytes += 4096;
+		}
+
+		// write the magic byte
+		if (auto r = stream.write(&protocol::MAGIC, 1, MSG_MORE)) {
+			plog::v(LOG_ERROR "net", "Cannot write: %s", r.Err().msg);
+			return r.Err().no;
 		}
 
 		// Finalize send

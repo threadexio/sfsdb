@@ -82,7 +82,11 @@ namespace handlers {
 		}
 
 		// Send the file
-		if (auto r = stream->write((const char*)fptr, fsize))
+		if (auto r = stream->write((const char*)fptr, fsize, MSG_MORE))
+			return HANDLER_NO_SEND_RES;
+
+		// Send the magic byte
+		if (auto r = stream->write(&protocol::MAGIC, 1))
 			return HANDLER_NO_SEND_RES;
 
 		munmap(fptr, fsize);
