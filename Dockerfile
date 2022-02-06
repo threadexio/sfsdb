@@ -1,9 +1,11 @@
+ARG VERSION
+
 FROM debian:stable-slim AS builder
 RUN apt-get -y update
 RUN apt-get install -y make cmake g++ libboost-program-options1.74-dev
 COPY ./ /mnt
 WORKDIR /mnt
-RUN [ "make", "BUILD_TYPE=Release" ]
+RUN [ "make", "BUILD_TYPE=Release", "VERSION=${VERSION}" ]
 
 FROM debian:stable-slim AS final
 COPY --from=builder /mnt/build/src/sfsdb-server /usr/local/bin/sfsdb-server
