@@ -4,7 +4,7 @@ RUN apt-get install -y make cmake g++ libboost-program-options1.74-dev
 COPY ./ /mnt
 WORKDIR /mnt
 ARG VER
-RUN [ "make", "BUILD_TYPE=Release", "VERSION=${VER}" ]
+RUN [ "make", "BUILD_TYPE=Release", "VERSION=${VER}", "clean", "all" ]
 
 FROM debian:stable-slim AS final
 COPY --from=builder /mnt/build/src/sfsdb-server /usr/local/bin/sfsdb-server
