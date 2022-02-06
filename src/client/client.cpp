@@ -432,8 +432,7 @@ int main(int argc, char* argv[]) {
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			std::cout << "Usage " << argv[0] << " {flags} [volume path]\n\n"
-					  << desc << "\n";
+			std::cout << "Usage " << argv[0] << " {flags}\n\n" << desc << "\n";
 			return EXIT_SUCCESS;
 		}
 
