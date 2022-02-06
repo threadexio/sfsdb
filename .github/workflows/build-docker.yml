@@ -19,8 +19,8 @@ jobs:
         id: prep
         run: |
           # https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/
-          DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY%/}
-          TAG=${GITHUB_REF%refs/tags/}
+          DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY#*/}
+          TAG=${GITHUB_REF#refs/tags/}
 
           TAGS="${DOCKER_IMAGE}:${TAG}"
 
