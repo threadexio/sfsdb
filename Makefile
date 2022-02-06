@@ -15,7 +15,10 @@ MAKEFLAGS += --no-print-directory
 
 #===============#
 
-VERSION ?= $(shell git log --format=%h -n1)
+VERSION ?=
+ifeq ($(VERSION),)
+	VERSION := $(shell git log --format=%h -n1)
+endif
 
 BUILD_TESTS ?= n
 ifeq ($(BUILD_TESTS), y)
@@ -23,7 +26,8 @@ ifeq ($(BUILD_TESTS), y)
 endif
 
 .PHONY:
-all: build
+all: #build
+	@echo ======= ${VERSION} ==========
 
 .PHONY:
 .ONESHELL:
