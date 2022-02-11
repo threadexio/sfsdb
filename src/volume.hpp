@@ -5,6 +5,7 @@
 #include <string>
 
 #include "common.hpp"
+#include "hooks.hpp"
 #include "storage.hpp"
 #include "uid.hpp"
 
@@ -121,6 +122,9 @@ namespace volume {
 		}
 
 		if (auto r = storage::init())
+			return std::move(ret.Err(r.Err()));
+
+		if (auto r = hooks::run_hooks(hooks::type::PRE))
 			return std::move(ret.Err(r.Err()));
 
 		return std::move(ret.Ok(volume_type(root)));

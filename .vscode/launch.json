@@ -9,7 +9,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceRoot}/build/src/sfsdb-server",
-			"args": ["-v", "/tmp/testvol"],
+			"args": ["-v", "${workspaceRoot}/example"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],

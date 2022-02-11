@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "handlers.hpp"
+#include "hooks.hpp"
 #include "log.hpp"
 #include "misc.hpp"
 #include "protocol.hpp"
@@ -64,6 +65,7 @@ static int con_handler(nio::ip::stream&& _clstream) {
 volume::volume_type vol;
 
 static void child_exit_handler(int) {
+	plog::v(LOG_INFO "net", "Closing connection");
 	exit(1);
 }
 
@@ -82,9 +84,12 @@ static void exit_handler(int sig) {
 	while (std::getline(chfile, chpid, ' '))
 		children.push_back(std::stoi(chpid));
 
-	for (auto pid : children) kill(pid, SIGUSR1);
+	for (auto pid : children) kill(pid, SIGTERM);
 
 	for (auto pid : children) waitpid(pid, NULL, 0);
+
+	if (auto r = hooks::run_hooks(hooks::type::POST))
+		plog::v(LOG_ERROR "hook", "%s", r.Err().msg);
 
 	exit(sig);
 }
@@ -182,10 +187,11 @@ int main(int argc, char* argv[]) {
 
 		pid_t child = fork();
 		if (child == -1) {
-			plog::v(LOG_ERROR "sys", "fork: %s", strerror(errno));
+			plog::v(LOG_ERROR "sys", "fork: %s", Error(errno).msg);
 			continue;
 		} else if (child == 0) {
-			signal(SIGUSR1, child_exit_handler);
+			signal(SIGINT, SIG_DFL);
+			signal(SIGTERM, child_exit_handler);
 			return con_handler(std::move(s));
 		}
 	}

@@ -150,6 +150,10 @@ namespace storage {
 			std::filesystem::create_directory(DATA_DIR);
 			std::filesystem::create_directories(ID_DIR);
 			std::filesystem::create_directories(NAME_DIR);
+
+			std::filesystem::create_directories(HOOK_DIR);
+			std::filesystem::create_directories(HOOK_PRE_DIR);
+			std::filesystem::create_directories(HOOK_POST_DIR);
 			return std::move(ret.Ok(nullptr));
 		} catch (const std::filesystem::filesystem_error& e) {
 			return std::move(ret.Err(e.code().value()));

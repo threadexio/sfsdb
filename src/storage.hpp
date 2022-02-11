@@ -17,6 +17,10 @@ namespace storage {
 	constexpr auto NAME_DIR = "map/by-name/";
 	constexpr auto DATA_DIR = "data/";
 
+	constexpr auto HOOK_DIR		 = "hooks/";
+	constexpr auto HOOK_PRE_DIR	 = "hooks/pre.d";
+	constexpr auto HOOK_POST_DIR = "hooks/post.d";
+
 	constexpr auto SEPARATOR = '\n';
 
 	struct meta {

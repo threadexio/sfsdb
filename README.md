@@ -38,3 +38,15 @@ $ make
 ```
 
 The resulting server and command line client binaries can be found over at `build/src/`
+
+# Usage
+
+Just run the binary with `--help` and it will explain everything you need to know. An example empty volume can be found in the `example/` directory.
+
+## Hooks
+
+Hooks reside in the root of each volume in a subdirectory called `hooks` and are executed with alphabetic wildcard order, to see the order of execution before running the server use `ls | sort` on the appropriate hook directory. A hook is any executable file, whether that would be an ELF file or a shell script or some other executable format is up to the user. Hooks can be used for example to mount the correct filesystem on startup or shutdown of the server or perform any other cleanup that might be required.
+
+A hook can either run on startup if placed in `hooks/pre.d/` or on shutdown if placed in `hooks/post.d/`.
+
+If a hook exits with the magic value `164` the server will not execute the rest of the hooks and immediately exit.

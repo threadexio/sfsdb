@@ -5,3 +5,8 @@
 /.vscode/!*.json
 
 /.cache
+
+/example/data/*
+/example/map/*/*
+
+!/**/.gitkeep
