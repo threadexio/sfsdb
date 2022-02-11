@@ -1,3 +1,9 @@
+[github]: https://github.com/threadexio/sfsdb
+[ghreleases]: https://github.com/threadexio/sfsdb/releases
+[ghtests]: https://github.com/threadexio/sfsdb/actions/workflows/tests.yml
+[ghdockerbuild]: https://github.com/threadexio/sfsdb/actions/workflows/build-docker.yml
+[dockerhub]: https://hub.docker.com/repository/docker/thatrandomguy/sfsdb
+
 <div align="center">
 
 <img src="assets/logo.svg" height=250>
@@ -6,7 +12,14 @@
 
 # sfsdb
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/threadexio/sfsdb/Run%20tests?logo=github&style=plastic)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/threadexio/sfsdb/Run%20tests?label=tests&logo=github&style=plastic)][ghtests]
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/threadexio/sfsdb/Build%20Docker?label=docker%20build&logo=docker&style=plastic)][ghdockerbuild]
+
+[![GitHub commits since latest release (by date)](https://img.shields.io/github/commits-since/threadexio/sfsdb/latest?logo=github&style=plastic)][ghreleases]
+[![Docker Pulls](https://img.shields.io/docker/pulls/thatrandomguy/sfsdb?logo=docker&style=plastic)][dockerhub]
+
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/threadexio/sfsdb?logo=github&style=plastic)][github]
+[![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/thatrandomguy/sfsdb?logo=docker&style=plastic)][dockerhub]
 
 `S`imple
 `F`ile
