@@ -20,11 +20,12 @@ jobs:
         run: |
           # https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/
           DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY#*/}
-          TAG=${GITHUB_REF#refs/tags/v}
+          TAG=${GITHUB_REF#refs/tags/}
 
           TAGS="${DOCKER_IMAGE}:${TAG}"
 
-          if [[ $TAG =~ '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$' ]]; then
+          if [[ $TAG =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            TAG=${TAG#v} # Strip the leading "v" if it exists
             TAGS="${DOCKER_IMAGE}:latest,$TAGS"
           fi
 
@@ -56,6 +57,7 @@ jobs:
             tags: ${{ steps.prep.outputs.tags }}
             platforms: linux/amd64,linux/arm64,linux/arm
 
-      - run: |
+      - name: Image info
+        run: |
           echo Version: ${{ steps.prep.outputs.version }}
           echo Tags: ${{ steps.prep.outputs.tags }}
