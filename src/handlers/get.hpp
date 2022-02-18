@@ -9,7 +9,8 @@
 extern volume::volume_type vol;
 
 namespace handlers {
-	REGISTER_HANDLER(get) {
+	REGISTER_HANDLER(get)
+	try {
 		/**
 		 * Command format:
 		 *
@@ -76,22 +77,22 @@ namespace handlers {
 
 			protocol::types::bigdata(fsize).to(tmp);
 
-			if (auto r = stream->write(
-					tmp.str().c_str(), tmp.str().length(), MSG_MORE))
-				return HANDLER_NO_SEND_RES;
+			stream->write(tmp.str().c_str(), tmp.str().length(), MSG_MORE);
 		}
 
 		// Send the file
-		if (auto r = stream->write((const char*)fptr, fsize, MSG_MORE))
-			return HANDLER_NO_SEND_RES;
+		stream->write((const char*)fptr, fsize, MSG_MORE);
 
 		// Send the magic byte
-		if (auto r = stream->write(&protocol::MAGIC, 1))
-			return HANDLER_NO_SEND_RES;
+		stream->write(&protocol::MAGIC, 1);
 
 		munmap(fptr, fsize);
 		close(fd);
 
+		return HANDLER_NO_SEND_RES;
+
+	} catch (const nio::io_error& e) {
+		plog::v(LOG_WARNING "net", "%s: %s", e.which(), e.what());
 		return HANDLER_NO_SEND_RES;
 	}
 } // namespace handlers

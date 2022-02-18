@@ -25,7 +25,7 @@ namespace handlers {
 
 		auto* stream = (stream_type*)arg;
 
-		stream->shutdown();
+		stream->close();
 
 		return HANDLER_NO_SEND_RES;
 	}

@@ -18,47 +18,49 @@
 
 namespace po = boost::program_options;
 
-static int con_handler(nio::ip::stream&& _clstream) {
+static int con_handler(nio::stream&& _clstream) {
 	// One client must be able to send multiple commands per
 	// connection
 	auto clstream = _clstream;
 
 	for (;;) {
-		// Read the message header
-		protocol::types::header head;
-		{
-			char tmp[protocol::types::header::SIZE];
-			if (auto r = clstream.read(tmp, sizeof(tmp), MSG_WAITALL))
-				break;
-			const char* tmp1 = tmp;
+		try {
+			// Read the message header
+			protocol::types::header head;
+			{
+				char tmp[protocol::types::header::SIZE];
+				clstream.read(tmp, sizeof(tmp), MSG_WAITALL);
+				const char* tmp1 = tmp;
 
-			if (auto err = protocol::get_type(tmp1, head)) {
-				plog::v(LOG_WARNING "client", "Bad request: %s", err.msg);
-				std::stringstream tmp;
-				protocol::messages::error(err.msg).to(tmp);
-				clstream.write(tmp.str().c_str(), tmp.str().length());
-				break;
+				if (auto err = protocol::get_type(tmp1, head)) {
+					plog::v(LOG_WARNING "client", "Bad request: %s", err.msg);
+					std::stringstream tmp;
+					protocol::messages::error(err.msg).to(tmp);
+					clstream.write(tmp.str().c_str(), tmp.str().length());
+					break;
+				}
+			}
+
+			std::unique_ptr<char[]> req(new char[head.length]);
+			clstream.read(req.get(), head.length, MSG_WAITALL);
+
+			std::stringstream res;
+
+			auto result = protocol::parse(
+				commands, head, req.get(), res, (void*)&clstream);
+
+			// The handler is expected to return HANDLER_ERROR and set
+			// the desired response in res if there is an error and the
+			// response isn't sent from the handler
+			if (result != HANDLER_NO_SEND_RES) {
+				clstream.write(res.str().c_str(), res.str().length());
 			}
 		}
 
-		std::unique_ptr<char[]> req(new char[head.length]);
-		if (auto r = clstream.read(req.get(), head.length, MSG_WAITALL))
+		catch (const nio::io_error& e) {
 			break;
-
-		std::stringstream res;
-
-		auto result =
-			protocol::parse(commands, head, req.get(), res, (void*)&clstream);
-
-		// The handler is expected to return HANDLER_ERROR and set
-		// the desired response in res if there is an error and the
-		// response isn't sent from the handler
-		if (result != HANDLER_NO_SEND_RES) {
-			if (auto r = clstream.write(res.str().c_str(), res.str().length()))
-				break;
 		}
 	}
-
 	return 0;
 }
 
@@ -71,9 +73,7 @@ static void child_exit_handler(int) {
 
 static void exit_handler(int sig) {
 	// Parse /proc/$$/task/$$/children
-	std::string proc_path = "/proc";
-	proc_path += getpid();
-	proc_path += "/task/";
+	std::string proc_path = "/proc/self/task/";
 	proc_path += getpid();
 	proc_path += "/children";
 
@@ -142,58 +142,52 @@ int main(int argc, char* argv[]) {
 	} else
 		vol = r.Ok();
 
-	// Setup network stuff
-	nio::ip::v4::addr	addr(ip, port);
-	nio::ip::v4::server srv(addr);
+	nio::ip::v4::addr addr;
 
-	if (auto r = srv.Create()) {
-		plog::v(LOG_ERROR "net", "socket: %s", r.Err().msg);
-		exit(r.Err().no);
-	}
+	try {
+		// Setup network stuff
+		addr.ip(ip);
+		addr.port(port);
 
-	if (auto r = srv.set_opt(nio::SOPT::REUSE_ADDRESS, &nio::ENABLE)) {
-		plog::v(LOG_ERROR "net", "set_opt: %s", r.Err().msg);
-		exit(r.Err().no);
-	}
+		nio::ip::v4::server srv(addr);
 
-	if (auto r = srv.Bind()) {
-		plog::v(LOG_ERROR "net", "bind: %s", r.Err().msg);
-		exit(r.Err().no);
-	}
-
-	if (auto r = srv.Listen()) {
-		plog::v(LOG_ERROR "net", "listen: %s", r.Err().msg);
-		exit(r.Err().no);
-	}
-
-	plog::v(LOG_INFO "net",
-			"Listening on %s:%d...",
-			addr.ip().c_str(),
-			addr.port());
-
-	// Main loop
-	for (;;) {
-		nio::ip::v4::stream s;
-		if (auto r = srv.Accept()) {
-			plog::v(LOG_WARNING "net", "accept: %s", r.Err().msg);
-			return -1;
-		} else
-			s = r.Ok();
+		srv.create();
+		srv.set_opt(nio::option::REUSE_ADDRESS, &nio::ENABLE);
+		srv.bind();
+		srv.listen();
 
 		plog::v(LOG_INFO "net",
-				"Connected: %s:%zu",
-				s.peer().ip().c_str(),
-				s.peer().port());
+				"Listening on %s:%d...",
+				addr.ip().c_str(),
+				addr.port());
 
-		pid_t child = fork();
-		if (child == -1) {
-			plog::v(LOG_ERROR "sys", "fork: %s", Error(errno).msg);
-			continue;
-		} else if (child == 0) {
-			signal(SIGINT, SIG_DFL);
-			signal(SIGTERM, child_exit_handler);
-			return con_handler(std::move(s));
+		// Main loop
+		for (;;) {
+			try {
+				nio::ip::v4::stream s = srv.accept();
+
+				plog::v(LOG_INFO "net",
+						"Connected: %s:%zu",
+						s.peer().ip().c_str(),
+						s.peer().port());
+
+				pid_t child = fork();
+				if (child == -1) {
+					plog::v(LOG_ERROR "sys", "fork: %s", Error(errno).msg);
+					continue;
+				} else if (child == 0) { /* child code */
+					signal(SIGINT, SIG_DFL);
+					signal(SIGTERM, child_exit_handler);
+					return con_handler(std::move(s));
+				}
+			} catch (const nio::error& e) {
+				plog::v(LOG_WARNING "net", "%s: %s", e.which(), e.what());
+			}
 		}
+
+		return EXIT_SUCCESS;
+	} catch (const nio::error& e) {
+		plog::v(LOG_ERROR "net", "%s: %s", e.which(), e.what());
+		return e.err();
 	}
-	return 0;
 }

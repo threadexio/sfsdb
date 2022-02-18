@@ -4,7 +4,8 @@
 #include "log.hpp"
 #include "messages.hpp"
 #include "misc.hpp"
-#include "nio/ip/stream.hpp"
+#include "nio/error.hpp"
+#include "nio/stream.hpp"
 #include "volume.hpp"
 
 //==============//
@@ -17,8 +18,6 @@
 
 //==============//
 
-#include "nio/ip/stream.hpp"
-
 namespace handlers {
-	using stream_type = nio::ip::stream;
+	using stream_type = nio::stream;
 }
