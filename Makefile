@@ -4,6 +4,8 @@ CXX ?=
 CXXFLAGS ?=
 CMFLAGS ?= 
 
+REQUIRED_CXXFLAGS := -Wall -Wextra
+
 #===============#
 
 BUILD_DIR ?= ./build
@@ -36,7 +38,7 @@ build: FORCE
 
 	@cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON \
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
-		-DCMAKE_CXX_FLAGS="$(CXXFLAGS) -Wall -Wextra -DVERSION='\"${VERSION}\"'" \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(REQUIRED_CXXFLAGS) -DVERSION='\"${VERSION}\"'" \
 		$(CMFLAGS) \
 		..
 
