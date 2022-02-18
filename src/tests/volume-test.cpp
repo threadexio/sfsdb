@@ -46,6 +46,8 @@ static file testfiles[] = {
 	{"file_dup", "data of duplicate"}};
 
 TEST_CASE("volume tests", "[main]") {
+	std::filesystem::create_directories(testpath);
+
 	volume::volume_type vol;
 	if (auto r = volume::init(testpath))
 		LOG_ERR(r.Err().msg)
