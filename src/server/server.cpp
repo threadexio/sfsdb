@@ -111,10 +111,10 @@ int main(int argc, char* argv[]) {
 	try {
 		po::options_description desc("Options");
 		desc.add_options()("help,h", "This help message")(
-			"ip4,i",
+			"ip4,4",
 			po::value<std::string>(&ip4),
 			"Interface IPv4 address to listen on")(
-			"ip6,I",
+			"ip6,6",
 			po::value<std::string>(&ip6),
 			"Interface IPv6 address to listen on")(
 			"unix,U",
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
 		po::notify(vm);
 
 		if (vm.count("version")) {
-			plog::v(LOG_INFO "version", VERSION);
+			plog::v(LOG_INFO "sfsdb-server", VERSION);
 			return EXIT_SUCCESS;
 		}
 
@@ -144,6 +144,12 @@ int main(int argc, char* argv[]) {
 		if (! vm.count("volume")) {
 			plog::v(LOG_ERROR "server",
 					"Option --volume is required. See --help.");
+			return EXIT_FAILURE;
+		}
+
+		if (! vm.count("ip4") && ! vm.count("ip6") && ! vm.count("unix")) {
+			plog::v(LOG_ERROR "server",
+					"At least one of -4, -6 or -U is required");
 			return EXIT_FAILURE;
 		}
 
@@ -164,11 +170,7 @@ int main(int argc, char* argv[]) {
 		if (vm.count("ip4")) {
 			subservers.push_back(std::thread([&]() -> int {
 				try {
-					nio::ip::v4::addr addr;
-
-					// Setup network stuff
-					addr.ip(ip4);
-					addr.port(port);
+					nio::ip::v4::addr addr(ip4, port);
 
 					nio::ip::v4::server srv(addr);
 
@@ -218,11 +220,7 @@ int main(int argc, char* argv[]) {
 		if (vm.count("ip6")) {
 			subservers.push_back(std::thread([&]() -> int {
 				try {
-					nio::ip::v6::addr addr;
-
-					// Setup network stuff
-					addr.ip(ip6);
-					addr.port(port);
+					nio::ip::v6::addr addr(ip6, port);
 
 					nio::ip::v6::server srv(addr);
 
@@ -271,10 +269,8 @@ int main(int argc, char* argv[]) {
 		// Unix socket section
 		if (vm.count("unix")) {
 			subservers.push_back(std::thread([&]() -> int {
-				nio::unx::addr addr;
-
 				try {
-					// Setup network stuff
+					nio::unx::addr addr;
 					addr.path(unix_path);
 
 					nio::unx::server srv(addr);
@@ -323,6 +319,8 @@ int main(int argc, char* argv[]) {
 
 		if (auto r = hooks::run_hooks(hooks::type::POST))
 			plog::v(LOG_ERROR "hook", "%s", r.Err().msg);
+
+		return EXIT_SUCCESS;
 	} catch (const po::error& e) {
 		plog::v(LOG_ERROR "server", "%s", e.what());
 		return EXIT_FAILURE;
