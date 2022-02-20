@@ -11,4 +11,4 @@ COPY --from=builder /mnt/build/src/sfsdb-server /usr/local/bin/sfsdb-server
 COPY --from=builder /mnt/build/src/sfsdb-cli /usr/local/bin/sfsdb-cli
 VOLUME [ "/data" ]
 EXPOSE 36363
-ENTRYPOINT [ "sfsdb-server", "-v", "/data", "-p", "36363" ]
+ENTRYPOINT [ "sfsdb-server", "-v", "/data", "-4", "0.0.0.0", "-p", "36363" ]
