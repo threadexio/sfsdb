@@ -4,5 +4,4 @@
 #define HANDLER_ERROR		1
 #define HANDLER_NO_SEND_RES 2
 
-#define DEFAULT_ADDR "0.0.0.0"
 #define DEFAULT_PORT 36363

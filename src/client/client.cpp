@@ -483,7 +483,7 @@ int main(int argc, char* argv[]) {
 		po::options_description desc("Options");
 		desc.add_options()("help,h", "This help message")(
 			"ip4,4",
-			po::value<std::string>(&ip4),
+			po::value<std::string>(&ip4)->default_value("127.0.0.1"),
 			"Interface IPv4 address to connect to")(
 			"ip6,6",
 			po::value<std::string>(&ip6),
