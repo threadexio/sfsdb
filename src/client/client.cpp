@@ -1,5 +1,10 @@
 #include "nio/ip/v4/client.hpp"
 
+#include "nio/ip/v6/client.hpp"
+#include "nio/stream.hpp"
+#include "nio/unx/client.hpp"
+//
+
 #include <boost/program_options.hpp>
 #include <csignal>
 #include <fstream>
@@ -15,7 +20,7 @@
 
 namespace po = boost::program_options;
 
-static nio::ip::v4::stream stream;
+static nio::stream stream;
 
 static int get(const uid::uid_type& id) {
 	try {
@@ -395,16 +400,97 @@ static void exit_handler(int sig) {
 	exit(sig);
 }
 
+static void shell_loop(const std::string& prompt) {
+	std::string input;
+	while (true) {
+		std::cout << prompt;
+
+		// Ctrl + D
+		if (! std::getline(std::cin, input)) {
+			exit_handler(0);
+		}
+
+		if (input == "")
+			continue;
+
+		std::vector<std::string> args;
+
+		std::string		  arg;
+		std::stringstream tmp {input};
+		while (std::getline(tmp, arg, ' ')) {
+			if (arg != "")
+				args.push_back(arg);
+		}
+
+		std::string command = args[0];
+		// shift the args, so args[0] is the first command parameter
+		args.erase(args.begin());
+
+		if (command == "GET") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "GET [file id]");
+			else
+				get(args[0]);
+		} else if (command == "PUT") {
+			if (args.size() != 2)
+				plog::v(LOG_NOTICE "Usage", "PUT [file name] [file path]");
+			else
+				put(args[0], args[1]);
+		} else if (command == "DESC") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "DESC [file id]");
+			else
+				desc(args[0]);
+		} else if (command == "DEL") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "DEL [file id]");
+			else
+				del(args[0]);
+		} else if (command == "LIST") {
+			if (args.size() != 1)
+				plog::v(LOG_NOTICE "Usage", "LIST [file name]");
+			else
+				list(args[0]);
+		} else if (command == "QUIT") {
+			exit_handler(0);
+		} else if (command == "HELP") {
+			plog::v(LOG_INFO "Commands", "");
+			plog::v(LOG_NOTICE "GET",
+					"\tGet remote file contents from server and print to "
+					"console");
+			plog::v(LOG_NOTICE "PUT", "\tPut local file to server");
+			plog::v(LOG_NOTICE "DESC", "\tGet details about remote file");
+			plog::v(LOG_NOTICE "DEL", "\tDelete a remote file");
+			plog::v(LOG_NOTICE "LIST", "\tList all files with filename");
+			plog::v(LOG_NOTICE "QUIT", "\tClose the current connection");
+			plog::v(LOG_NOTICE "HELP", "\tThis help message");
+		} else {
+			plog::v(LOG_WARNING "client",
+					"Unknown command: \"%s\". Type \"HELP\" for a list of "
+					"commands",
+					command.c_str());
+		}
+	}
+}
+
 int main(int argc, char* argv[]) {
-	std::string ip;
+	std::string ip4;
+	std::string ip6;
+	std::string unix_path;
 	int			port;
 
 	try {
 		po::options_description desc("Options");
 		desc.add_options()("help,h", "This help message")(
-			"ip,i",
-			po::value<std::string>(&ip)->default_value("127.0.0.1"),
-			"Server address")(
+			"ip4,4",
+			po::value<std::string>(&ip4),
+			"Interface IPv4 address to connect to")(
+			"ip6,6",
+			po::value<std::string>(&ip6),
+			"Interface IPv6 address to connect to")(
+			"unix,U",
+			po::value<std::string>(&unix_path),
+			"Unix socket to connect to")(
 			"port,p",
 			po::value<int>(&port)->default_value(DEFAULT_PORT),
 			"Port to connect to")("version,V", "Print version");
@@ -423,109 +509,67 @@ int main(int argc, char* argv[]) {
 			return EXIT_SUCCESS;
 		}
 
-	} catch (const std::exception& e) {
-		plog::v(LOG_ERROR "arg_parser", "%s", e.what());
-		return EXIT_FAILURE;
-	}
+		signal(SIGINT, exit_handler);
+		signal(SIGTERM, exit_handler);
 
-	nio::ip::v4::addr addr;
+		if (vm.count("ip4")) {
+			try {
+				nio::ip::v4::addr	addr(ip4, port);
+				nio::ip::v4::client cli(addr);
 
-	signal(SIGINT, exit_handler);
-	signal(SIGTERM, exit_handler);
+				cli.create();
+				stream = cli.connect();
 
-	try {
-		addr.ip(ip);
-		addr.port(port);
+				shell_loop(addr.ip() + ":" + std::to_string(addr.port()) +
+						   " > ");
 
-		plog::v(LOG_INFO "info",
-				"Server will be @: %s:%d",
-				addr.ip().c_str(),
-				addr.port());
+				return EXIT_SUCCESS;
 
-		nio::ip::v4::client cli(addr);
-
-		cli.create();
-		stream = cli.connect();
-
-		// Main shell loop
-		std::string prompt = stream.peer().ip() + ":" +
-							 std::to_string(stream.peer().port()) + " > ";
-
-		std::string input;
-		while (true) {
-			std::cout << prompt;
-
-			// Ctrl + D
-			if (! std::getline(std::cin, input)) {
-				exit_handler(0);
+			} catch (const nio::error& e) {
+				plog::v(LOG_ERROR "net", "%s: %s", e.which(), e.what());
+				return EXIT_FAILURE;
 			}
+		} else if (vm.count("ip6")) {
+			try {
+				nio::ip::v6::addr	addr(ip6, port);
+				nio::ip::v6::client cli(addr);
 
-			if (input == "")
-				continue;
+				cli.create();
+				stream = cli.connect();
 
-			std::vector<std::string> args;
+				shell_loop(addr.ip() + ":" + std::to_string(addr.port()) +
+						   " > ");
 
-			std::string		  arg;
-			std::stringstream tmp {input};
-			while (std::getline(tmp, arg, ' ')) {
-				if (arg != "")
-					args.push_back(arg);
+				return EXIT_SUCCESS;
+
+			} catch (const nio::error& e) {
+				plog::v(LOG_ERROR "net", "%s: %s", e.which(), e.what());
+				return EXIT_FAILURE;
 			}
+		} else if (vm.count("unix")) {
+			try {
+				nio::unx::addr	 addr(unix_path);
+				nio::unx::client cli(addr);
 
-			std::string command = args[0];
-			// shift the args, so args[0] is the first command parameter
-			args.erase(args.begin());
+				cli.create();
+				stream = cli.connect();
 
-			if (command == "GET") {
-				if (args.size() != 1)
-					plog::v(LOG_NOTICE "Usage", "GET [file id]");
-				else
-					get(args[0]);
-			} else if (command == "PUT") {
-				if (args.size() != 2)
-					plog::v(LOG_NOTICE "Usage", "PUT [file name] [file path]");
-				else
-					put(args[0], args[1]);
-			} else if (command == "DESC") {
-				if (args.size() != 1)
-					plog::v(LOG_NOTICE "Usage", "DESC [file id]");
-				else
-					desc(args[0]);
-			} else if (command == "DEL") {
-				if (args.size() != 1)
-					plog::v(LOG_NOTICE "Usage", "DEL [file id]");
-				else
-					del(args[0]);
-			} else if (command == "LIST") {
-				if (args.size() != 1)
-					plog::v(LOG_NOTICE "Usage", "LIST [file name]");
-				else
-					list(args[0]);
-			} else if (command == "QUIT") {
-				exit_handler(0);
-			} else if (command == "HELP") {
-				plog::v(LOG_INFO "Commands", "");
-				plog::v(LOG_NOTICE "GET",
-						"\tGet remote file contents from server and print to "
-						"console");
-				plog::v(LOG_NOTICE "PUT", "\tPut local file to server");
-				plog::v(LOG_NOTICE "DESC", "\tGet details about remote file");
-				plog::v(LOG_NOTICE "DEL", "\tDelete a remote file");
-				plog::v(LOG_NOTICE "LIST", "\tList all files with filename");
-				plog::v(LOG_NOTICE "QUIT", "\tClose the current connection");
-				plog::v(LOG_NOTICE "HELP", "\tThis help message");
-			} else {
-				plog::v(LOG_WARNING "client",
-						"Unknown command: \"%s\". Type \"HELP\" for a list of "
-						"commands",
-						command.c_str());
+				shell_loop(addr.path() + " > ");
+
+				return EXIT_SUCCESS;
+
+			} catch (const nio::error& e) {
+				plog::v(LOG_ERROR "net", "%s: %s", e.which(), e.what());
+				return EXIT_FAILURE;
 			}
+		} else {
+			plog::v(LOG_ERROR "client",
+					"At least one of -4, -6 or -U is required");
+			return EXIT_FAILURE;
 		}
 
-		return EXIT_SUCCESS;
-
-	} catch (const nio::error& e) {
-		plog::v(LOG_ERROR "net", "%s: %s", e.which(), e.what());
+	} catch (const po::error& e) {
+		plog::v(LOG_ERROR "arg_parser", "%s", e.what());
 		return EXIT_FAILURE;
 	}
 }

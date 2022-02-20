@@ -24,10 +24,9 @@
 
 namespace po = boost::program_options;
 
-static int con_handler(nio::stream&& _clstream) {
+static int con_handler(nio::stream&& clstream) {
 	// One client must be able to send multiple commands per
 	// connection
-	auto clstream = _clstream;
 
 	for (;;) {
 		try {
@@ -72,8 +71,6 @@ static int con_handler(nio::stream&& _clstream) {
 
 volume::volume_type vol;
 
-static std::vector<std::thread> subservers;
-
 static void child_exit_handler(int) {
 	plog::v(LOG_INFO "net", "Closing connection");
 	exit(1);
@@ -99,6 +96,19 @@ static void exit_handler(int) {
 		plog::v(LOG_ERROR "hook", "%s", r.Err().msg);
 
 	exit(0);
+}
+
+static int spawn_new_child(nio::stream&& s) {
+	pid_t child = fork();
+	if (child == -1) {
+		plog::v(LOG_ERROR "sys", "fork: %s", Error(errno).msg);
+		return -1;
+	} else if (child == 0) { /* child code */
+		signal(SIGINT, SIG_DFL);
+		signal(SIGTERM, child_exit_handler);
+		return con_handler(std::move(s));
+	} else
+		return 1;
 }
 
 int main(int argc, char* argv[]) {
@@ -179,27 +189,22 @@ int main(int argc, char* argv[]) {
 					srv.bind();
 					srv.listen();
 
-					plog::v(LOG_INFO "net",
-							"Listening on %s:%d...",
+					plog::v(LOG_NOTICE "net",
+							"listening on %s:%d...",
 							addr.ip().c_str(),
 							addr.port());
 
-					// Main loop
 					for (;;) {
 						try {
-							nio::stream s = srv.accept();
+							auto stream = srv.accept();
 
-							pid_t child = fork();
-							if (child == -1) {
-								plog::v(LOG_ERROR "sys",
-										"fork: %s",
-										Error(errno).msg);
+							plog::v(LOG_INFO "net",
+									"connected: %s:%d",
+									stream.peer().ip().c_str(),
+									stream.peer().port());
+
+							if (! spawn_new_child(std::move(stream)))
 								continue;
-							} else if (child == 0) { /* child code */
-								signal(SIGINT, SIG_DFL);
-								signal(SIGTERM, child_exit_handler);
-								return con_handler(std::move(s));
-							}
 						} catch (const nio::error& e) {
 							plog::v(LOG_WARNING "net",
 									"%s: %s",
@@ -229,27 +234,23 @@ int main(int argc, char* argv[]) {
 					srv.bind();
 					srv.listen();
 
-					plog::v(LOG_INFO "net",
-							"Listening on %s:%d...",
+					plog::v(LOG_NOTICE "net",
+							"listening on %s:%d...",
 							addr.ip().c_str(),
 							addr.port());
 
 					// Main loop
 					for (;;) {
 						try {
-							nio::stream s = srv.accept();
+							auto stream = srv.accept();
 
-							pid_t child = fork();
-							if (child == -1) {
-								plog::v(LOG_ERROR "sys",
-										"fork: %s",
-										Error(errno).msg);
+							plog::v(LOG_INFO "net",
+									"connected: %s:%d",
+									stream.peer().ip().c_str(),
+									stream.peer().port());
+
+							if (! spawn_new_child(std::move(stream)))
 								continue;
-							} else if (child == 0) { /* child code */
-								signal(SIGINT, SIG_DFL);
-								signal(SIGTERM, child_exit_handler);
-								return con_handler(std::move(s));
-							}
 						} catch (const nio::error& e) {
 							plog::v(LOG_WARNING "net",
 									"%s: %s",
@@ -275,30 +276,18 @@ int main(int argc, char* argv[]) {
 
 					nio::unx::server srv(addr);
 
-					plog::v(LOG_INFO "net",
-							"Listening on %s...",
+					plog::v(LOG_NOTICE "net",
+							"listening on %s...",
 							addr.path().c_str());
 
 					srv.create();
 					srv.bind();
 					srv.listen();
 
-					// Main loop
 					for (;;) {
 						try {
-							nio::unx::stream s = srv.accept();
-
-							pid_t child = fork();
-							if (child == -1) {
-								plog::v(LOG_ERROR "sys",
-										"fork: %s",
-										Error(errno).msg);
+							if (! spawn_new_child(srv.accept()))
 								continue;
-							} else if (child == 0) { /* child code */
-								signal(SIGINT, SIG_DFL);
-								signal(SIGTERM, child_exit_handler);
-								return con_handler(std::move(s));
-							}
 						} catch (const nio::error& e) {
 							plog::v(LOG_WARNING "net",
 									"%s: %s",

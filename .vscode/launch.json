@@ -30,7 +30,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceRoot}/build/src/sfsdb-cli",
-			"args": [],
+			"args": ["-6", "::ffff:127.0.0.1"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],
